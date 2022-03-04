@@ -11,7 +11,7 @@ contract Refund is ReentrancyGuard, AccessControl {
   bytes32 public constant MEMBER_ROLE = keccak256("MEMBER");
   bytes32 public constant APPROVER_ROLE = keccak256("APPROVER");
 
-  uint256 numOfRequests;
+  uint256 public numOfRequests;
 
   struct ReimbursementRequest {
     uint256 id;
@@ -94,7 +94,6 @@ contract Refund is ReentrancyGuard, AccessControl {
     if (request.approved) {
       payRequest(request);
     }
-
   }
 
   // Checks preconditions.
@@ -110,7 +109,7 @@ contract Refund is ReentrancyGuard, AccessControl {
     if (request.paid) {
       revert("Reimbursement request has been paid already");
     }
-    if (request.approved) {
+    if (!request.approved) {
       revert("Reimbursement request has been denied already");
     }
     request.paid = true;
