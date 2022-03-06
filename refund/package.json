@@ -66,6 +66,10 @@
       "**/hardhat-ts/**"
     ]
   },
-  "dependencies": {},
+  "dependencies": {
+    "ipfs-http-client": "^56.0.1",
+    "react-image-data-capture": "^1.2.2",
+    "tesseract.js": "^2.1.5"
+  },
   "devDependencies": {}
 }
