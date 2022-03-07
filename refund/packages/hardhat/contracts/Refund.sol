@@ -79,6 +79,8 @@ contract Refund is ReentrancyGuard, AccessControl {
     request.reimbursementAddress = payable(reimbursementAddress);
     request.member = msg.sender;
 
+    memberRequests[request.member].push(requestId);
+
     emit NewRequestCreated(msg.sender, amount);
   }
 
@@ -139,8 +141,17 @@ contract Refund is ReentrancyGuard, AccessControl {
   }
 
   // Returns all the reimbursement requests for the caller.
-  function getMembersRequests() public view returns (uint256[] memory) {
-    return memberRequests[msg.sender];
+  function getMembersRequests()
+    public
+    view
+    returns (ReimbursementRequest[] memory requests) {
+
+    uint256 size = memberRequests[msg.sender].length;
+    requests = new ReimbursementRequest[](size);
+    for (uint256 index = 0; index < size; index++) {
+      requests[index] =
+        reimbursementRequests[memberRequests[msg.sender][index]];
+    }
   }
 
   // Returns all the reimbursement requests.
