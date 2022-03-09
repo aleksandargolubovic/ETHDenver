@@ -375,7 +375,10 @@ function App(props) {
           />
         </Route>
         <Route path="/newrefundrequest">
-          <NewRefundRequest/>
+          <NewRefundRequest
+            refundInstance={refundInstance}
+            signer={userSigner}
+          />
         </Route>
         <Route path="/mainnetdai">
           <Contract

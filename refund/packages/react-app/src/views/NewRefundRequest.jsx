@@ -19,6 +19,8 @@ export default function NewRefundRequest({
   tx,
   readContracts,
   writeContracts,
+  signer,
+  refundInstance,
 }) {
   const [newPurpose, setNewPurpose] = useState("loading...");
   const [receiptImages, setReceiptImages] = useState([]);
