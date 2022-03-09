@@ -17,6 +17,7 @@ contract Refund is ReentrancyGuard, AccessControl {
     uint256 id;
     uint256 amount;
     string description;
+    string url;
     bool processed;
     bool approved;
     bool paid;
@@ -66,6 +67,7 @@ contract Refund is ReentrancyGuard, AccessControl {
   // function.
   function createRequest(
     string calldata description,
+    string calldata url,
     address reimbursementAddress,
     uint256 amount)
     external
@@ -76,6 +78,7 @@ contract Refund is ReentrancyGuard, AccessControl {
     request.id = requestId;
     request.amount = amount;
     request.description = description;
+    request.url = url;
     request.reimbursementAddress = payable(reimbursementAddress);
     request.member = msg.sender;
 
