@@ -28,8 +28,9 @@ import { NETWORKS, ALCHEMY_KEY } from "./constants";
 import externalContracts from "./contracts/external_contracts";
 // contracts
 import deployedContracts from "./contracts/hardhat_contracts.json";
+import abi from "./contracts/refund.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
-import { Home, ExampleUI, Hints, Subgraph, NewRefundRequest } from "./views";
+import { Home, ExampleUI, Hints, Subgraph, NewRefundRequest, RefundView } from "./views";
 import { useStaticJsonRPC } from "./hooks";
 
 const { ethers } = require("ethers");
@@ -143,18 +144,42 @@ function App(props) {
 
   // const contractConfig = useContractConfig();
 
-  const contractConfig = { deployedContracts: deployedContracts || {}, externalContracts: externalContracts || {} };
+  const contractConfig = {
+    deployedContracts: deployedContracts || {},
+    externalContracts: externalContracts || {},};
+  
+  const refund = {
+    abi,
+    address: "0xCafac3dD18aC6c6e92c921884f9E4176737C052c"};
+  
+  const myCustomcontract = {
+    31337: {
+      contracts: {
+        r: refund
+      }
+    }
+  }
+
+  const contractConfig2 = {
+    deployedContracts: {},
+    externalContracts:  myCustomcontract || {},};
 
   // Load in your local 📝 contract and read a value from it:
   const readContracts = useContractLoader(localProvider, contractConfig);
-
+  console.log(readContracts);
   // If you want to make 🔐 write transactions to your contracts, use the userSigner:
   const writeContracts = useContractLoader(userSigner, contractConfig, localChainId);
 
+  // Refund contract instance.
+  const [refundInstance, setRefundInstance] = useState();
   // EXTERNAL CONTRACT EXAMPLE:
   //
   // If you want to bring in the mainnet DAI contract it would look like:
   const mainnetContracts = useContractLoader(mainnetProvider, contractConfig);
+
+  const myLocalContracts = useContractLoader(localProvider, contractConfig2);
+
+  console.log("My local", myLocalContracts);
 
   // If you want to call a function on a new block
   useOnBlock(mainnetProvider, () => {
@@ -263,8 +288,8 @@ function App(props) {
         <Menu.Item key="/debug">
           <Link to="/debug">Debug Contracts</Link>
         </Menu.Item>
-        <Menu.Item key="/hints">
-          <Link to="/hints">Hints</Link>
+        <Menu.Item key="/refund">
+          <Link to="/refund">Refund View</Link>
         </Menu.Item>
         <Menu.Item key="/exampleui">
           <Link to="/exampleui">ExampleUI</Link>
@@ -283,7 +308,7 @@ function App(props) {
       <Switch>
         <Route exact path="/">
           {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
-          <Home yourLocalBalance={yourLocalBalance} readContracts={readContracts} />
+          <Home yourLocalBalance={yourLocalBalance} readContracts={readContracts} localProvider={localProvider}/>
         </Route>
         <Route exact path="/debug">
           {/*
@@ -293,7 +318,26 @@ function App(props) {
             */}
 
           <Contract
-            name="YourContract"
+            name="Registry"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+          <Contract
+            name="RefundFactory"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+          <Contract
+            customContract={myLocalContracts.r}
+            name="Refund"
             price={price}
             signer={userSigner}
             provider={localProvider}
@@ -302,12 +346,18 @@ function App(props) {
             contractConfig={contractConfig}
           />
         </Route>
-        <Route path="/hints">
-          <Hints
+        <Route path="/refund">
+          <RefundView
             address={address}
-            yourLocalBalance={yourLocalBalance}
             mainnetProvider={mainnetProvider}
+            localProvider={localProvider}
             price={price}
+            blockExplorer={blockExplorer}
+            provider={localProvider}
+            contractConfig={contractConfig}
+            signer={userSigner}
+            setRefundInstance={setRefundInstance}
+            refundInstance={refundInstance}
           />
         </Route>
         <Route path="/exampleui">

@@ -1,7 +1,10 @@
 import { useContractReader } from "eth-hooks";
 import { ethers } from "ethers";
 import React from "react";
+import { useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import abi from "../contracts/refund.json";
 
 /**
  * web3 props can be passed from '../App.jsx' into your local view component for use
@@ -9,10 +12,25 @@ import { Link } from "react-router-dom";
  * @param {*} readContracts contracts from current chain already pre-loaded using ethers contract module. More here https://docs.ethers.io/v5/api/contract/contract/
  * @returns react component
  **/
-function Home({ yourLocalBalance, readContracts }) {
+function Home({ yourLocalBalance, readContracts, localProvider }) {
   // you can also use hooks locally in your component of choice
   // in this case, let's keep track of 'purpose' variable from our contract
   const purpose = useContractReader(readContracts, "YourContract", "purpose");
+  // const [refund, setRefund] = useState();
+  // const refundAddr = "0xCafac3dD18aC6c6e92c921884f9E4176737C052c";
+  
+
+  // useEffect(() => {
+  //   async function getAddress() {
+  //     let ref = new ethers.Contract(refundAddr, abi, localProvider);
+  //     setRefund(ref);
+  //     if (ref) {
+  //       const response = await ref.numOfRequests();
+  //       console.log("NUMOFREQ: ", response);
+  //     }
+  //   }
+  //   getAddress();
+  // }, []);
 
   return (
     <div>
@@ -117,6 +135,9 @@ function Home({ yourLocalBalance, readContracts }) {
         <span style={{ marginRight: 8 }}>🛠</span>
         Tinker with your smart contract using the <Link to="/debug">"Debug Contract"</Link> tab.
       </div>
+      {/* <div>
+        REFUND CONTRACT AT 0xCafac3dD18aC6c6e92c921884f9E4176737C052c
+      </div> */}
     </div>
   );
 }
