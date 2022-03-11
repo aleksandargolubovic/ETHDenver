@@ -8,8 +8,6 @@ import { useBalance } from "eth-hooks";
 import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
 
-//import { EthSignSignature } from './EthSignSignature'
-
 export default function RefundView({
   //userSigner,
   address,
@@ -29,41 +27,30 @@ export default function RefundView({
   const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
   const REGISTRY = "Registry";
   const REFUND_FACTORY = "RefundFactory";
-  const [to, setTo] = useState('')
-  const [threshold, setThreshold] = useState(0)
   const [owners, setOwners] = useState([])
-  const [admins, setAdmins] = useState([])
+  const [approvers, setApprovers] = useState([])
   const [members, setMembers] = useState([])
   const [name, setName] = useState('')
   const [transactions, setTransactions] = useState([])
-  const [value, setValue] = useState(0)
-  const [selector, setSelector] = useState('')
-  const [params, setParams] = useState([])
-  const [data, setData] = useState('0x00')
   const [nameAlreadyExists, setNameAlreadyExists] = useState(false);
-  const [organizationFound, setOrganizationFound] = useState(true);
+  const [showError, setShowError] = useState('');
 
   const contracts = useContractLoader(provider, contractConfig, chainId);
-  //console.log("RefundViewContracts", contracts);
   const registryContract = contracts[REGISTRY];
-  //console.log("RefundViewRegistry", registryContract);
   const refundFactoryContract = contracts[REFUND_FACTORY];
   const registryContractIsDeployed =
     useContractExistsAtAddress(provider, registryContract ? registryContract.address : "");
   // const RefundFaactoryContractIsDeployed =
   //   useContractExistsAtAddress(provider, refundFactoryContract.address);
 
-
-
   const [refundAddress, setRefundAddress] = useLocalStorage("deployedRefund")
   const [showDeployForm, setShowDeployForm] = useState(false);
   const [deploying, setDeploying] = useState()
   const [showRefundInfo, setShowRefundInfo] = useState();
-
+  const [isApprover, setIsApprover] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  
   const refundBalance = useBalance(localProvider, refundAddress);
-  //const { safeSdk, safeFactory } = useSafeSdk(userSigner, refundAddress)
-
-  const isSafeOwnerConnected = owners.includes(address)
 
   const createNewRefund = useCallback((showDeployForm) => {
     setShowDeployForm(showDeployForm);
@@ -78,7 +65,7 @@ export default function RefundView({
   const initializeRefundContract = async () => {
     const addr = await registryContract.refundOrgs(name);
     if (addr === NULL_ADDRESS) {
-      setOrganizationFound(false);
+      setShowError("Organization doesn't exist");
       console.error("Refund contract doesn't exist: ", name);
       return;
     }
@@ -87,28 +74,30 @@ export default function RefundView({
     const isMember = await refundInstance.connect(signer).isMember();
     console.log("You are admin: ", isApprover);
     console.log("You are member: ", isMember);
-    setRefundInstance(refundInstance);
-    setOrganizationFound(true);
-    setRefundAddress(addr);
+    if (!isApprover && !isMember) {
+      setShowError("You are not part of this organization!");
+    } else {
+      setIsApprover(isApprover);
+      setIsMember(isMember);
+      setRefundInstance(refundInstance);
+      setRefundAddress(addr);
+    }
   };
 
-  const deployRefund = useCallback(async (name, admins, members) => {
+  const deployRefund = useCallback(async (name, approvers, members) => {
     if (!refundFactoryContract) return
     setDeploying(true)
     let refund
     try {
       refund = await refundFactoryContract.connect(signer)
-        .newRefundOrg(name, admins, members);
+        .newRefundOrg(name, approvers, members);
     } catch (error) {
       console.error(error)
       setDeploying(false)
       return
     }
     console.log("New refund created: ", refund);
-    setDeploying(false)
-    //const newRefundAddress = ethers.utils.getAddress(refund)
-    
-    //setRefundAddress(newRefundAddress)
+    setDeploying(false);
   }, [refundFactoryContract])
 
   const checkNameAvailability = async (newName) => {
@@ -119,7 +108,6 @@ export default function RefundView({
         console.log("nameOK", nameOk);
         if (nameOk === NULL_ADDRESS) {
           setNameAlreadyExists(false);
-          //console.log("name ok");
           return true;
         }
       } catch (error) {
@@ -225,9 +213,6 @@ export default function RefundView({
   //     }
   //   }
   // },3333);
-
-  const [ walletConnectUrl, setWalletConnectUrl ] = useState()
-  const [ connected, setConnected ] = useState()
 
   // useEffect(()=>{
   //   //walletConnectUrl
@@ -337,10 +322,12 @@ export default function RefundView({
   if (refundAddress) {
     refundInfo = (
       <div>
+        <h2>{name}</h2>
         <Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
         <Balance value={refundBalance} price={price} />
 
         <div style={{padding:8}}>
+          <b>You are {isApprover ? "Approver" : isMember ? "Member" : ""}</b>
         {owners&&owners.length>0?(
           <>
             <b>Signers:</b>
@@ -373,6 +360,7 @@ export default function RefundView({
           <Input placeholder="Organization name" 
             style={{ width: 'calc(100% - 100px)' }}
             onChange={async (e) => {
+                setShowError('');
                 checkNameAvailability(e.target.value)
                 setName(e.target.value)
               }}
@@ -380,14 +368,8 @@ export default function RefundView({
           <Button type="primary" onClick={initializeRefundContract}>Enter</Button>
         </Input.Group>
         <div>
-          {!organizationFound && <label>Organization doesn't exist</label>}
+          {showError !== '' && <label style={{color: 'crimson'}}>{showError}</label>}
         </div>
-        {/* <AddressInput ensProvider={mainnetProvider} onChange={(addr)=>{
-          if(ethers.utils.isAddress(addr)){
-            console.log("addr!",addr)
-            setRefundAddress(ethers.utils.getAddress(addr))
-          }
-        }}/> */}
       </div>
     )
   } else {
@@ -414,19 +396,13 @@ export default function RefundView({
           </div>
           <Divider />
           <div style={{ padding: 4 }}>
-            Administrators
-            <EditableTagGroup key="admins" setAddresses={setAdmins}/>
+            Approvers
+            <EditableTagGroup key="approvers" setAddresses={setApprovers}/>
           </div>
           <Divider />
           <div style={{ padding: 4 }}>
             Members
             <EditableTagGroup key="members" setAddresses={setMembers}/>
-            {/* <AddressInput placeholder="Enter To Address"
-              onChange={setTo}
-              ensProvider={mainnetProvider}
-              value={to}
-              onChange={setTo}
-            /> */}
           </div>
           <Divider />
           {/* <div style={{ padding: 4 }}>
@@ -468,9 +444,9 @@ export default function RefundView({
             //onClick={() => createNewRefund(true)}
             type={"primary"}
             onClick={async () => {
-              console.log("admins", admins);
+              console.log("approvers", approvers);
               console.log("members", members);
-              deployRefund(name, admins, members);
+              deployRefund(name, approvers, members);
               // if (selector !== '' && params.length > 0) {
               //   const abi = [
               //     "function " + selector
@@ -537,58 +513,7 @@ export default function RefundView({
 
       </div>
       <Divider />
-      {/* <div style={{ margin: 8 }}>
-        {
-          transactions.length > 0 && transactions.map((transaction) => {
-
-            let buttonDisplay = ""
-
-            if(!owners || owners.length<=0){
-              buttonDisplay = (
-                <Spin/>
-              )
-            }else if(!isTransactionExecutable(transaction)){
-              if(isSafeOwnerConnected && !isTransactionSignedByAddress(transaction)){
-                buttonDisplay = (
-                  <Button
-                    style={{ marginTop: 8 }}
-                    onClick={() => confirmTransaction(transaction)}
-                  >
-                  Sign TX</Button>
-                )
-              }else{
-                buttonDisplay = "Waiting for more signatures..."
-              }
-            }else{
-              if(isSafeOwnerConnected && isTransactionExecutable(transaction)){
-                buttonDisplay = (
-                  <Button
-                    style={{ marginTop: 8 }}
-                    onClick={() => executeSafeTransaction(transaction)}
-                  >Execute TX</Button>
-                )
-              } else {
-                buttonDisplay = "Waiting to execute..."
-              }
-            }
-
-
-            return (
-              <div style={{borderBottom:"1px solid #ddd"}}>
-                {console.log("transaction",transaction)}
-                <h1>#{transaction.nonce}</h1>
-                <Address value={transaction.to} ensProvider={mainnetProvider} />
-                <p>Data: {transaction.data}</p>
-                <p>Value: {ethers.utils.formatEther(transaction.value)} ETH</p>
-                <div style={{padding:32}}>
-                  {buttonDisplay}
-                </div>
-              </div>
-            )
-          })
-        }
-      </div> */}
-      <div style={{padding:64,margin:64}}><a href="https://github.com/austintgriffith/scaffold-eth/tree/gnosis-starter-kit" target="_blank">🏗</a></div>
+      {/* <div style={{padding:64,margin:64}}><a href="https://github.com/austintgriffith/scaffold-eth/tree/gnosis-starter-kit" target="_blank">🏗</a></div> */}
     </div>
   );
 }
