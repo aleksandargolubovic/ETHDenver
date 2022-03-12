@@ -6,6 +6,7 @@ import { AlignCenterOutlined, PlusSquareOutlined, PlusCircleFilled } from "@ant-
 import { Popup } from "../components"
 import { NewRefundRequest } from "./index.js"
 import { useState } from 'react'
+import { useEffect } from "react";
 
 
 /**
@@ -32,12 +33,13 @@ export default function Requests({
   address,
   signer,
   refundInstance,
+  isApprover,
 }) {
   // 📟 Listen for broadcast events
   //const events = useEventListener(contracts, contractName, eventName, localProvider, startBlock);
 
   const [buttonPopup, setButtonPopup] = useState(false);
-  const [requests, setRequess] = useState([]);
+  const [requests, setRequests] = useState([]);
 
   const columns = [
     {
@@ -70,8 +72,23 @@ export default function Requests({
         url: req.url
       }
     ));
-    setRequess(newRequests);
+    setRequests(newRequests);
   }
+
+  useEffect(() => {
+    async function getReqs() {
+      if (refundInstance) {
+        const ret = isApprover ? 
+          await refundInstance.connect(signer).getMembersRequests() :
+          await refundInstance.getRequests();
+
+        console.log(ret);
+        onRequestsChange(ret);
+      }
+    }
+    getReqs();
+  }, [refundInstance]);
+
   /*const requests = [
     {
       creator_addr:
@@ -146,26 +163,37 @@ export default function Requests({
                           <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.description}</div>
                         </Col>
                       </Row>
-                      <Row style={{ height: "50%", display: "flex" }}>
+                      {isApprover && <Row style={{ height: "50%", display: "flex" }}>
                         <Col span={16} offset={8} style={{ textAlign: "center", alignSelf: "flex-end" }}>
+                          {record.status === "In process" && (
+                          <>
                           <Button
                             onClick={async () => {
-
-                              console.log("***********getRequests*************");
-
-                              let done = await refundInstance.connect(signer).getMembersRequests();
-                              console.log(done);
-                              console.log("***********getRequests*************");
-
-
+                              try {
+                                let ret = await refundInstance.connect(signer)
+                                  .processRequest(record.key, true);
+                                console.log(ret);
+                              } catch (error) {
+                                console.log(error);
+                              }
                             }}
-
-
                           >Approve</Button>
                           &nbsp; &nbsp;
-                          <Button>Deny</Button>
+                          <Button
+                            onClick={async () => {
+                              try {
+                                let ret = await refundInstance.connect(signer)
+                                  .processRequest(record.key, false);
+                                console.log(ret);
+                              } catch (error) {
+                                console.log(error);
+                              }
+                            }}
+                          >Deny</Button>
+                          </>)}
+
                         </Col>
-                      </Row>
+                      </Row>}
                     </Col>
                   </Row>
                 </div>
@@ -175,7 +203,10 @@ export default function Requests({
           <Button
             onClick={async () => {
               console.log("***********Refresh*************");
-              let done = await refundInstance.connect(signer).getMembersRequests();
+              let done = isApprover ? 
+                await refundInstance.connect(signer).getMembersRequests() :
+                await refundInstance.getRequests();
+
               console.log(done);
               onRequestsChange(done);
               console.log("***********Refresh*************");

@@ -1,4 +1,5 @@
 import { Button, Card, DatePicker, Divider, Input, List, Progress, Slider, Spin, Switch, notification } from "antd";
+import { SendOutlined } from "@ant-design/icons";
 import { useContractExistsAtAddress, useContractLoader } from "eth-hooks";
 import React, { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
@@ -7,6 +8,7 @@ import { usePoller, useLocalStorage, useSafeSdk } from "../hooks";
 import { useBalance } from "eth-hooks";
 import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
+import { Transactor } from "../helpers";
 
 export default function RefundView({
   //userSigner,
@@ -22,7 +24,11 @@ export default function RefundView({
   gasPrice,
   signer,
   setRefundInstance,
-  refundInstance
+  refundInstance,
+  isApprover,
+  setIsApprover,
+  isMember,
+  setIsMember
 }) {
   const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
   const REGISTRY = "Registry";
@@ -31,6 +37,7 @@ export default function RefundView({
   const [approvers, setApprovers] = useState([])
   const [members, setMembers] = useState([])
   const [name, setName] = useState('')
+  const [value, setValue] = useState();
   const [transactions, setTransactions] = useState([])
   const [nameAlreadyExists, setNameAlreadyExists] = useState(false);
   const [showError, setShowError] = useState('');
@@ -46,9 +53,11 @@ export default function RefundView({
   const [refundAddress, setRefundAddress] = useLocalStorage("deployedRefund")
   const [showDeployForm, setShowDeployForm] = useState(false);
   const [deploying, setDeploying] = useState()
+  const [sendingFunds, setSendingFunds] = useState()
   const [showRefundInfo, setShowRefundInfo] = useState();
-  const [isApprover, setIsApprover] = useState(false);
-  const [isMember, setIsMember] = useState(false);
+  //const [isApprover, setIsApprover] = useLocalStorage(false);
+  //const [isMember, setIsMember] = useState(false);
+  const [numOfRequests, setNumOfRequests] = useState('');
   
   const refundBalance = useBalance(localProvider, refundAddress);
 
@@ -72,6 +81,8 @@ export default function RefundView({
     const refundInstance = new ethers.Contract(addr, refundAbi, localProvider);
     const isApprover = await refundInstance.connect(signer).isApprover();
     const isMember = await refundInstance.connect(signer).isMember();
+    const numOfRequests = await refundInstance.numOfRequests();
+    //console.log(numOfRequests.toString());
     console.log("You are admin: ", isApprover);
     console.log("You are member: ", isMember);
     if (!isApprover && !isMember) {
@@ -81,6 +92,7 @@ export default function RefundView({
       setIsMember(isMember);
       setRefundInstance(refundInstance);
       setRefundAddress(addr);
+      setNumOfRequests(numOfRequests.toString());
     }
   };
 
@@ -119,204 +131,6 @@ export default function RefundView({
     setNameAlreadyExists(true);
     return false;
   };
-  // const proposeSafeTransaction = useCallback(async (transaction) => {
-  //   if (!safeSdk || !serviceClient) return
-  //   let safeTransaction
-  //   try {
-  //     safeTransaction = await safeSdk.createTransaction(transaction)
-  //   } catch (error) {
-  //     console.error(error)
-  //     return
-  //   }
-  //   console.log('SAFE TX', safeTransaction)
-  //   const safeTxHash = await safeSdk.getTransactionHash(safeTransaction)
-  //   console.log('HASH', safeTxHash)
-  //   const safeSignature = await safeSdk.signTransactionHash(safeTxHash)
-  //   await serviceClient.deployForm(
-  //     refundAddress,
-  //     safeTransaction.data,
-  //     safeTxHash,
-  //     safeSignature
-  //   )
-  // }, [safeSdk, serviceClient, refundAddress])
-
-  // const confirmTransaction = useCallback(async (transaction) => {
-  //   if (!safeSdk || !serviceClient) return
-  //   const hash = transaction.safeTxHash
-  //   let signature
-  //   try {
-  //     signature = await safeSdk.signTransactionHash(hash)
-  //   } catch (error) {
-  //     console.error(error)
-  //     return
-  //   }
-  //   await serviceClient.confirmTransaction(hash, signature.data)
-  // }, [safeSdk, serviceClient])
-
-  // const executeSafeTransaction = useCallback(async (transaction) => {
-  //   if (!safeSdk) return
-  //   console.log(transaction)
-  //   const safeTransactionData = {
-  //     to: transaction.to,
-  //     value: transaction.value,
-  //     data: transaction.data || '0x',
-  //     operation: transaction.operation,
-  //     safeTxGas: transaction.safeTxGas,
-  //     baseGas: transaction.baseGas,
-  //     gasPrice: Number(transaction.gasPrice),
-  //     gasToken: transaction.gasToken,
-  //     refundReceiver: transaction.refundReceiver,
-  //     nonce: transaction.nonce
-  //   }
-  //   const safeTransaction = await safeSdk.createTransaction(safeTransactionData)
-  //   transaction.confirmations.forEach(confirmation => {
-  //     const signature = new EthSignSignature(confirmation.owner, confirmation.signature)
-  //     safeTransaction.addSignature(signature)
-  //   })
-  //   let executeTxResponse
-  //   try {
-  //     executeTxResponse = await safeSdk.executeTransaction(safeTransaction)
-  //   } catch(error) {
-  //     console.error(error)
-  //     return
-  //   }
-  //   const receipt = executeTxResponse.transactionResponse && (await executeTxResponse.transactionResponse.wait())
-  //   console.log(receipt)
-  // }, [safeSdk])
-
-  // const isTransactionExecutable = (transaction) => transaction.confirmations.length >= threshold
-
-  // const isTransactionSignedByAddress = (transaction) => {
-  //   const confirmation = transaction.confirmations.find(confirmation => confirmation.owner === address)
-  //   return !!confirmation
-  // }
-
-
-
-  // usePoller(async () => {
-  //   if(refundAddress){
-  //     setRefundAddress(ethers.utils.getAddress(refundAddress))
-  //     try{
-  //       if(safeSdk){
-  //         const owners = await safeSdk.getOwners()
-  //         const threshold = await safeSdk.getThreshold()
-  //         setOwners(owners)
-  //         setThreshold(threshold)
-  //         console.log("owners",owners,"threshold",threshold)
-  //       }
-  //       console.log("CHECKING TRANSACTIONS....",refundAddress)
-  //       const transactions = await serviceClient.getPendingTransactions(refundAddress)
-  //       console.log("Pending transactions:", transactions)
-  //       setTransactions(transactions.results)
-  //     }catch(e){
-  //       console.log("ERROR POLLING FROM SAFE:",e)
-  //     }
-  //   }
-  // },3333);
-
-  // useEffect(()=>{
-  //   //walletConnectUrl
-  // //   if(walletConnectUrl){
-  //     const connector = new WalletConnect(
-  //       {
-  //         // Required
-  //         uri: walletConnectUrl,
-  //         // Required
-  //         clientMeta: {
-  //           description: "Gnosis Safe Starter Kit",
-  //           url: "https://github.com/austintgriffith/scaffold-eth/tree/gnosis-starter-kit",
-  //           icons: ["http://s3.amazonaws.com/pix.iemoji.com/images/emoji/apple/ios-12/256/owl.png"],
-  //           name: "Gnosis Safe Starter Kit",
-  //         },
-  //       }/*,
-  //       {
-  //         // Optional
-  //         url: "<YOUR_PUSH_SERVER_URL>",
-  //         type: "fcm",
-  //         token: token,
-  //         peerMeta: true,
-  //         language: language,
-  //       }*/
-  //     );
-
-  //     // Subscribe to session requests
-  //     connector.on("session_request", (error, payload) => {
-  //       if (error) {
-  //         throw error;
-  //       }
-
-  //       console.log("SESSION REQUEST")
-  //       // Handle Session Request
-
-  //       connector.approveSession({
-  //         accounts: [                 // required
-  //           refundAddress
-  //         ],
-  //         chainId: targetNetwork.chainId               // required
-  //       })
-
-  //       setConnected(true)
-
-
-  //       /* payload:
-  //       {
-  //         id: 1,
-  //         jsonrpc: '2.0'.
-  //         method: 'session_request',
-  //         params: [{
-  //           peerId: '15d8b6a3-15bd-493e-9358-111e3a4e6ee4',
-  //           peerMeta: {
-  //             name: "WalletConnect Example",
-  //             description: "Try out WalletConnect v1.0",
-  //             icons: ["https://example.walletconnect.org/favicon.ico"],
-  //             url: "https://example.walletconnect.org"
-  //           }
-  //         }]
-  //       }
-  //       */
-  //     });
-
-  //     // Subscribe to call requests
-  //     connector.on("call_request", (error, payload) => {
-  //       if (error) {
-  //         throw error;
-  //       }
-
-  //       console.log("REQUEST PERMISSION TO:",payload,payload.params[0])
-  //       // Handle Call Request
-  //       console.log("SETTING TO",payload.params[0].to)
-  //       setTo(payload.params[0].to)
-  //       setData(payload.params[0].data?payload.params[0].data:"0x0000")
-  //       setValue(payload.params[0].value)
-  //       /* payload:
-  //       {
-  //         id: 1,
-  //         jsonrpc: '2.0'.
-  //         method: 'eth_sign',
-  //         params: [
-  //           "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-  //           "My email is john@doe.com - 1537836206101"
-  //         ]
-  //       }
-  //       */
-  //       /*connector.approveRequest({
-  //         id: payload.id,
-  //         result: "0x41791102999c339c844880b23950704cc43aa840f3739e365323cda4dfa89e7a"
-  //       });*/
-
-  //     });
-
-  //     connector.on("disconnect", (error, payload) => {
-  //       if (error) {
-  //         throw error;
-  //       }
-  //       console.log("disconnect")
-
-  //       // Delete connector
-  //     });
-  //   }
-  // },[ walletConnectUrl ])
-
 
   let refundInfo
   if (refundAddress) {
@@ -325,9 +139,12 @@ export default function RefundView({
         <h2>{name}</h2>
         <Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
         <Balance value={refundBalance} price={price} />
-
+        <Divider/>
         <div style={{padding:8}}>
           <b>You are {isApprover ? "Approver" : isMember ? "Member" : ""}</b>
+          <br />
+          <b>Number of requests: {numOfRequests}</b>
+
         {owners&&owners.length>0?(
           <>
             <b>Signers:</b>
@@ -346,6 +163,40 @@ export default function RefundView({
         ):<Spin/>}
 
         </div>
+        <Divider/>
+        <h3>Send funds to this organization:</h3>
+        <div style={{ padding: 4 }}>
+          <EtherInput
+            autofocus
+            price={price}
+            placeholder="Enter Tx Value"
+            value={value}
+            onChange={v => {setValue(v);}}
+          />
+        </div>
+        <Button
+            style={{ marginTop: 8 }}
+            loading={sendingFunds}
+            type={"primary"}
+            onClick={async () => {
+              const tx = Transactor(signer);
+              console.log("Amount:", value);
+              let amount;
+              try {
+                amount = ethers.utils.parseEther("" + value);
+              } catch (e) {
+                // failed to parseEther, try something else
+                amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
+              }
+              console.log("Amount2:", amount);
+              tx({
+                to: refundAddress,
+                value: amount,
+              });
+            }}
+          >
+          <SendOutlined /> Send funds
+        </Button>
       </div>
     )
   } else if (!showDeployForm) {
@@ -405,24 +256,7 @@ export default function RefundView({
             <EditableTagGroup key="members" setAddresses={setMembers}/>
           </div>
           <Divider />
-          {/* <div style={{ padding: 4 }}>
-            <EtherInput
-              autofocus
-              price={price}
-              placeholder="Enter Tx Value"
-              value={value}
-              
-              onChange={v => {
-                v = v && v.toString && v.toString()
-                if(v){
-                  const valueResult = ethers.utils.parseEther(""+v.replace(/\D/g, ""))
-                  setValue(valueResult);
-                }
-
-              }}
-              onChange={setValue}
-            />
-          </div> */}
+         
           {/* <div style={{ padding: 4 }}>
             <Input placeholder="Enter Selector i.e add(uint, uint)"
               onChange={async (e) => {
@@ -441,49 +275,11 @@ export default function RefundView({
           <Button
             style={{ marginTop: 8 }}
             loading={deploying}
-            //onClick={() => createNewRefund(true)}
             type={"primary"}
             onClick={async () => {
               console.log("approvers", approvers);
               console.log("members", members);
               deployRefund(name, approvers, members);
-              // if (selector !== '' && params.length > 0) {
-              //   const abi = [
-              //     "function " + selector
-              //   ];
-              //   const index = selector.indexOf('(');
-              //   const fragment = selector.substring(0, index)
-
-              //   const iface = new ethers.utils.Interface(abi);
-              //   for (let i = 0; i < params.length; i++) {
-              //     if (iface.fragments[0].inputs[i].baseType.includes('uint') || iface.fragments[0].inputs[i].baseType.includes('int')) {
-              //       params[i] = parseInt(params[i])
-              //     }
-              //   }
-              //   const data = iface.encodeFunctionData(fragment, params);
-              //   setData(data)
-              // }
-
-              // const checksumForm = ethers.utils.getAddress(to)
-              // const partialTx = {
-              //   to: checksumForm,
-              //   data,
-              //   value: ethers.utils.parseEther(value?value.toString():"0").toString()
-              // }
-              // // try{
-              // //   await proposeSafeTransaction(partialTx)
-              // // }catch(e){
-              // //   console.log("🛑 Error Proposing Transaction",e)
-              // //   notification.open({
-              // //     message: "🛑 Error Proposing Transaction",
-              // //     description: (
-              // //       <>
-              // //         {e.toString()} (check console)
-              // //       </>
-              // //     ),
-              // //   });
-              // //}
-
             }}
           >
             Create
@@ -500,10 +296,14 @@ export default function RefundView({
         {refundAddress || showDeployForm?<div style={{float:"right", padding:4, cursor:"pointer", fontSize:28}} onClick={()=>{
           setRefundAddress("")
           setTransactions([])
+          setRefundInstance()
+          setNameAlreadyExists(false)
           setShowDeployForm(false)
         }}>
           x
         </div>:""}
+
+        
 
         <div style={{padding:4}}>
           {refundInfo}
@@ -513,7 +313,6 @@ export default function RefundView({
 
       </div>
       <Divider />
-      {/* <div style={{padding:64,margin:64}}><a href="https://github.com/austintgriffith/scaffold-eth/tree/gnosis-starter-kit" target="_blank">🏗</a></div> */}
     </div>
   );
 }

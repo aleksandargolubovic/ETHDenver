@@ -172,6 +172,8 @@ function App(props) {
 
   // Refund contract instance.
   const [refundInstance, setRefundInstance] = useState();
+  const [isApprover, setIsApprover] = useState(false);
+  const [isMember, setIsMember] = useState(false);
   // EXTERNAL CONTRACT EXAMPLE:
   //
   // If you want to bring in the mainnet DAI contract it would look like:
@@ -287,9 +289,10 @@ function App(props) {
         <Menu.Item key="/">
           <Link to="/">Home</Link>
         </Menu.Item>
+        {refundInstance && 
         <Menu.Item key="/requests">
           <Link to="/requests">New Reimbursement Request</Link>
-        </Menu.Item>
+        </Menu.Item>}
       </Menu>
 
       <Switch>
@@ -305,6 +308,10 @@ function App(props) {
             signer={userSigner}
             setRefundInstance={setRefundInstance}
             refundInstance={refundInstance}
+            setIsApprover={setIsApprover}
+            isApprover={isApprover}
+            setIsMember={setIsMember}
+            isMember={isMember}
           />
         </Route>
         <Route path="/requests">
@@ -312,6 +319,7 @@ function App(props) {
             address={address}
             refundInstance={refundInstance}
             signer={userSigner}
+            isApprover={isApprover}
           />
         </Route>
       </Switch>
