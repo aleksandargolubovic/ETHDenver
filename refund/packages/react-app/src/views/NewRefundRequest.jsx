@@ -20,10 +20,11 @@ export default function NewRefundRequest({
   tx,
   readContracts,
   writeContracts,
+  trigger,
   signer,
   refundInstance,
 }) {
-  const [newPurpose, setNewPurpose] = useState("loading...");
+  const [description, setDescription] = useState("");
   const [receiptImages, setReceiptImages] = useState([]);
   const [recImageURLs, setRecImageURLs] = useState([]);
   const [refundAmount, setRefundAmount] = useState("0");
@@ -44,7 +45,7 @@ export default function NewRefundRequest({
       return (
         <div>
           <Input
-            value={'$' + refundAmount}
+            value={refundAmount}
             onChange={e => {
               setRefundAmount(e.target.value);
             }}
@@ -139,17 +140,43 @@ export default function NewRefundRequest({
           <TextArea
             autoSize={{ minRows: 2, maxRows: 3 }}
             onChange={e => {
-              setNewPurpose(e.target.value);
+              setDescription(e.target.value);
             }}
           />
           <Divider />
           <Button
             style={{ marginTop: 8 }}
             onClick={async () => {
-              addToIPFS(receiptImages.at(0).originFileObj).then(function (result) {
+              addToIPFS(receiptImages.at(0).originFileObj).then(async (result) => {
                 console.log(result.path);
                 let url = urlFromCID(result.cid);
                 console.log(url);
+                console.log("*********************isapprover******************");
+                const isApprover = await refundInstance.connect(signer).isApprover();
+                console.log(isApprover);
+                console.log("*********************description******************");
+                console.log(description);
+                console.log("*********************url******************");
+                console.log(url);
+                console.log("*********************address******************");
+                console.log(address);
+                console.log("*********************signer******************");
+                console.log(signer);
+                console.log("*********************refundAmount******************");
+                console.log(refundAmount);
+
+                try{
+                let done = await refundInstance.connect(signer).createRequest(
+                  description,
+                  url,
+                  address,
+                  refundAmount
+                );}
+                catch(error){
+                  console.error(error);
+                }
+                trigger(false);
+                  
               }, function (err) {
                 console.log(err);
               });

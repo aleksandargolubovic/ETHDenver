@@ -1,4 +1,4 @@
-import { Alert,  Input, Button, List, Image, Divider } from "antd";
+import { Alert, Input, Button, List, Image, Divider } from "antd";
 import { useEventListener } from "eth-hooks/events/useEventListener";
 import { Address, UploadPhoto } from "../components";
 import { Row, Col, Table, Tag, Space } from 'antd';
@@ -37,6 +37,7 @@ export default function Requests({
   //const events = useEventListener(contracts, contractName, eventName, localProvider, startBlock);
 
   const [buttonPopup, setButtonPopup] = useState(false);
+  const [requests, setRequess] = useState([]);
 
   const columns = [
     {
@@ -56,7 +57,22 @@ export default function Requests({
     },
   ];
 
-  const requests = [
+  function onRequestsChange(reqList) {
+    const newRequests = [];
+    reqList.forEach(req => newRequests.push(
+      {
+        creator_addr:
+          <Address address={req.reimbursementAddress} fontSize={16} />,
+        value: req.amount,
+        status: req.processed ? (req.approved ? "Approved" : "Denied") : "In process",
+        description: req.description,
+        key: req.id,
+        url: req.url
+      }
+    ));
+    setRequess(newRequests);
+  }
+  /*const requests = [
     {
       creator_addr:
         <Address address='0x823dCC4546070A46D66Af5e02747e74C69f3d509' fontSize={16} />,
@@ -73,7 +89,7 @@ export default function Requests({
       description: "nikola",
       key: 2
     },
-  ];
+  ];*/
 
   /*<List
           bordered
@@ -98,43 +114,74 @@ export default function Requests({
 
 
   function previewContent() {
-    if (buttonPopup) return (<NewRefundRequest></NewRefundRequest>)
+    if (buttonPopup) return (
+      <NewRefundRequest
+        address={address}
+        refundInstance={refundInstance}
+        signer={signer}
+        trigger={setButtonPopup}
+      />
+    )
     else {
       return (
-        <Table
-          columns={columns}
-          dataSource={requests}
-          expandable={{
-            expandedRowRender: record => (
-              <div style={{ margin: 0 }}>
-                <Row gutter={[8, 8]}>
-                  <Col span={10} style={{ textAlign: "center" }}>
-                    Receipt<br />
-                    <Image
-                      width={120}
-                      src="https://ipfs.infura.io/ipfs/QmZTCJYyLVuygLWgJeqmvr6cukKFEc4d2zCgPJ7MtVxPCv"
-                    />
-                  </Col>
-                  <Col span={14} style={{ textAlign: "center" }}>
-                    <Row style={{ height: "50%" }}>
-                      <Col span={24} style={{ textAlign: "center" }}>
-                        Additional comment
-                        <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius:6, padding: 16, margin: "auto" }}>{record.description}</div>
-                      </Col>
-                    </Row>
-                    <Row style={{ height: "50%", display: "flex" }}>
-                      <Col span={16} offset={8} style={{ textAlign: "center", alignSelf: "flex-end" }}>
-                        <Button>Approve</Button>
-                        &nbsp; &nbsp;
-                        <Button>Deny</Button>
-                      </Col>
-                    </Row>
-                  </Col>
-                </Row>
-              </div>
-            ),
-          }}
-        />
+        <div>
+          <Table
+            columns={columns}
+            dataSource={requests}
+            expandable={{
+              expandedRowRender: record => (
+                <div style={{ margin: 0 }}>
+                  <Row gutter={[8, 8]}>
+                    <Col span={10} style={{ textAlign: "center" }}>
+                      Receipt<br />
+                      <Image
+                        width={120}
+                        src={record.url}
+                      />
+                    </Col>
+                    <Col span={14} style={{ textAlign: "center" }}>
+                      <Row style={{ height: "50%" }}>
+                        <Col span={24} style={{ textAlign: "center" }}>
+                          Additional comment
+                          <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.description}</div>
+                        </Col>
+                      </Row>
+                      <Row style={{ height: "50%", display: "flex" }}>
+                        <Col span={16} offset={8} style={{ textAlign: "center", alignSelf: "flex-end" }}>
+                          <Button
+                            onClick={async () => {
+
+                              console.log("***********getRequests*************");
+
+                              let done = await refundInstance.connect(signer).getMembersRequests();
+                              console.log(done);
+                              console.log("***********getRequests*************");
+
+
+                            }}
+
+
+                          >Approve</Button>
+                          &nbsp; &nbsp;
+                          <Button>Deny</Button>
+                        </Col>
+                      </Row>
+                    </Col>
+                  </Row>
+                </div>
+              ),
+            }}
+          />
+          <Button
+            onClick={async () => {
+              console.log("***********Refresh*************");
+              let done = await refundInstance.connect(signer).getMembersRequests();
+              console.log(done);
+              onRequestsChange(done);
+              console.log("***********Refresh*************");
+            }}
+          >Refresh</Button>
+        </div>
       )
     }
   }

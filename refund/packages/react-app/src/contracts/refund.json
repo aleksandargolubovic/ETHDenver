@@ -200,6 +200,11 @@
         "type": "string"
       },
       {
+        "internalType": "string",
+        "name": "url",
+        "type": "string"
+      },
+      {
         "internalType": "address",
         "name": "reimbursementAddress",
         "type": "address"
@@ -234,6 +239,11 @@
           {
             "internalType": "string",
             "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "url",
             "type": "string"
           },
           {
@@ -303,6 +313,11 @@
             "type": "string"
           },
           {
+            "internalType": "string",
+            "name": "url",
+            "type": "string"
+          },
+          {
             "internalType": "bool",
             "name": "processed",
             "type": "bool"
@@ -360,6 +375,11 @@
           {
             "internalType": "string",
             "name": "description",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "url",
             "type": "string"
           },
           {
