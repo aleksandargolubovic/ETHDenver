@@ -1,11 +1,12 @@
-import { Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch } from "antd";
+import { Row, Col, Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch } from "antd";
 import React, { useState, useEffect } from "react";
 import { utils } from "ethers";
 import { SyncOutlined } from "@ant-design/icons";
 
-import { Address, Balance, Events } from "../components";
+import { Address, Balance, Events, UploadPhoto } from "../components";
 import { addToIPFS, getFromIPFS, urlFromCID } from "../helpers/ipfs";
 
+const { TextArea } = Input;
 
 const Tesseract = require('tesseract.js');
 
@@ -52,15 +53,60 @@ export default function NewRefundRequest({
     }
   }
 
-  useEffect(() => {
+
+  /*
+   <Input
+              type="file" accept="image/*"
+              addonAfter={
+                <div>
+                  Scan
+                </div>
+              }
+              onChange={onImageChange}
+            />
+            {recImageURLs.map(imageSrc => <img src={imageSrc} style={{ marginTop: 8, width: 350 }} />)}
+
+
+
+
+            <Row>
+            <Col span={12} style={{ textAlign: "center" }}>
+              <h4>Upload receipt</h4><br />
+              <UploadPhoto />
+            </Col>
+            <Col span={12} style={{ textAlign: "center" }}>
+              <h4>refund amount</h4><br />
+              {previewRefundAmount()}
+            </Col>            
+          </Row>
+            
+  */
+
+
+  useEffect(async () => {
+    console.log("***************receiptImages************************");
+    console.log(receiptImages);
     if (receiptImages.length < 1) return;
     const newImageUrls = [];
-    receiptImages.forEach(image => newImageUrls.push(URL.createObjectURL(image)));
-    setRecImageURLs(newImageUrls);
+    //newImageUrls.push(receiptImages.at(0).url)
+    //receiptImages.forEach(image => newImageUrls.push(image.url));
+    //setRecImageURLs(newImageUrls);
+
+    console.log(receiptImages.at(0).url);
+    let src = receiptImages.at(0).url;
+    if (!src) {
+      src = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.readAsDataURL(receiptImages.at(0).originFileObj);
+        reader.onload = () => resolve(reader.result);
+      });
+    }
+
+
     setRecognitionState("inProgress");
 
     Tesseract.recognize(
-      newImageUrls[0],
+      src,
       'eng',
       { logger: m => console.log(m) }
     ).then(({ data: { text } }) => {
@@ -76,28 +122,22 @@ export default function NewRefundRequest({
 
   return (
     <div>
-      <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
+      <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto" }}>
         <h2>Add new refund request</h2>
         <Divider />
-        <h4>upload receipt</h4>
         <div style={{ margin: 8 }}>
-          <Input
-            type="file" accept="image/*"
-            addonAfter={
-              <div>
-                Scan
-              </div>
-            }
-            onChange={onImageChange}
+          <h4>Upload receipt</h4>
+          <UploadPhoto 
+            fileList={receiptImages}
+            setFileList={setReceiptImages}
           />
-          {recImageURLs.map(imageSrc => <img src={imageSrc} style={{ marginTop: 8, width: 350 }} />)}
           <Divider />
-          <h4>refund amount</h4>
-          {previewRefundAmount()
-          }
+          <h4>Refund amount</h4>
+          {previewRefundAmount()}
           <Divider />
-          <h4>additional comment</h4>
-          <Input
+          <h4>Additional comment</h4>
+          <TextArea
+            autoSize={{ minRows: 2, maxRows: 3 }}
             onChange={e => {
               setNewPurpose(e.target.value);
             }}
@@ -106,7 +146,7 @@ export default function NewRefundRequest({
           <Button
             style={{ marginTop: 8 }}
             onClick={async () => {
-              addToIPFS(receiptImages[0]).then(function (result) {
+              addToIPFS(receiptImages.at(0).originFileObj).then(function (result) {
                 console.log(result.path);
                 let url = urlFromCID(result.cid);
                 console.log(url);

@@ -30,7 +30,7 @@ import externalContracts from "./contracts/external_contracts";
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import abi from "./contracts/refund.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
-import { Home, ExampleUI, Hints, Subgraph, NewRefundRequest, RefundView } from "./views";
+import { Home, ExampleUI, Hints, Subgraph, Requests, RefundView } from "./views";
 import { useStaticJsonRPC } from "./hooks";
 
 const { ethers } = require("ethers");
@@ -287,8 +287,8 @@ function App(props) {
         <Menu.Item key="/">
           <Link to="/">Home</Link>
         </Menu.Item>
-        <Menu.Item key="/newrefundrequest">
-          <Link to="/newrefundrequest">New Reimbursement Request</Link>
+        <Menu.Item key="/requests">
+          <Link to="/requests">New Reimbursement Request</Link>
         </Menu.Item>
       </Menu>
 
@@ -307,8 +307,8 @@ function App(props) {
             refundInstance={refundInstance}
           />
         </Route>
-        <Route path="/newrefundrequest">
-          <NewRefundRequest
+        <Route path="/requests">
+          <Requests
             refundInstance={refundInstance}
             signer={userSigner}
           />
