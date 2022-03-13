@@ -7,6 +7,7 @@ import { Popup } from "../components"
 import { NewRefundRequest } from "./index.js"
 import { useState } from 'react'
 import { useEffect } from "react";
+import { Redirect } from "react-router-dom";
 
 
 /**
@@ -142,6 +143,7 @@ export default function Requests({
     else {
       return (
         <div>
+          {!signer && <Redirect to="/"/>}
           <Table
             columns={columns}
             dataSource={requests}

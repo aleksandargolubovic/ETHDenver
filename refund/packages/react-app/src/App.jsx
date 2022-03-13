@@ -10,7 +10,7 @@ import {
 } from "eth-hooks";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, Route, Switch, useLocation } from "react-router-dom";
+import { Link, Route, Switch, useLocation, Redirect } from "react-router-dom";
 import "./App.css";
 import {
   Account,
@@ -59,7 +59,7 @@ const initialNetwork = NETWORKS.localhost; // <------- select your target fronte
 // 😬 Sorry for all the console logging
 const DEBUG = true;
 const NETWORKCHECK = true;
-const USE_BURNER_WALLET = true; // toggle burner wallet feature
+const USE_BURNER_WALLET = false; // toggle burner wallet feature
 const USE_NETWORK_SELECTOR = false;
 
 const web3Modal = Web3ModalSetup();
@@ -114,7 +114,9 @@ function App(props) {
   const gasPrice = useGasPrice(targetNetwork, "fast");
   // Use your injected provider from 🦊 Metamask or if you don't have it then instantly generate a 🔥 burner wallet.
   const userProviderAndSigner = useUserProviderAndSigner(injectedProvider, localProvider, USE_BURNER_WALLET);
+  
   const userSigner = userProviderAndSigner.signer;
+
 
   useEffect(() => {
     async function getAddress() {
@@ -124,6 +126,10 @@ function App(props) {
       }
     }
     getAddress();
+    if (!userSigner) {
+      console.log("TESTTTTTT");
+
+    }
   }, [userSigner]);
 
   // You can warn the user if you would like them to be on a specific network
@@ -287,7 +293,7 @@ function App(props) {
         style={{ textAlign: "center", marginTop: 40 }} 
         selectedKeys={[location.pathname]} mode="horizontal">
         <Menu.Item key="/">
-          <Link to="/">Home</Link>
+          <Link to="/home">Home</Link>
         </Menu.Item>
         {refundInstance && 
         <Menu.Item key="/requests">
@@ -297,6 +303,11 @@ function App(props) {
 
       <Switch>
         <Route exact path="/">
+          {!userSigner ? <h1>Please connect your wallet</h1> :
+            <Redirect to="/home"></Redirect>
+          }
+        </Route>
+        <Route path="/home">
           <RefundView
             address={address}
             mainnetProvider={mainnetProvider}

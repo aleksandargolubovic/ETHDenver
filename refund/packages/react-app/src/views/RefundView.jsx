@@ -9,6 +9,7 @@ import { useBalance } from "eth-hooks";
 import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
 import { Transactor } from "../helpers";
+import { Redirect } from "react-router-dom";
 
 export default function RefundView({
   //userSigner,
@@ -71,6 +72,8 @@ export default function RefundView({
   //   setShowRefundInfo(ret);
   // }, [refundInstance]);
 
+  console.log("SIGNERRRRRR: ", signer);
+
   const initializeRefundContract = async () => {
     const addr = await registryContract.refundOrgs(name);
     if (addr === NULL_ADDRESS) {
@@ -101,6 +104,8 @@ export default function RefundView({
     setDeploying(true)
     let refund
     try {
+      console.log("SIgner: ", signer);
+
       refund = await refundFactoryContract.connect(signer)
         .newRefundOrg(name, approvers, members);
     } catch (error) {
@@ -292,6 +297,7 @@ export default function RefundView({
 
   return (
     <div>
+      {!signer && <Redirect to="/"/>}
       <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
         {refundAddress || showDeployForm?<div style={{float:"right", padding:4, cursor:"pointer", fontSize:28}} onClick={()=>{
           setRefundAddress("")
