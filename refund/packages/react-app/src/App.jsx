@@ -297,7 +297,7 @@ function App(props) {
         </Menu.Item>
         {refundInstance && 
         <Menu.Item key="/requests">
-          <Link to="/requests">New Reimbursement Request</Link>
+          <Link to="/requests">Reimbursement Requests</Link>
         </Menu.Item>}
       </Menu>
 

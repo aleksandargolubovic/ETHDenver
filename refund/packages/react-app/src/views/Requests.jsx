@@ -10,26 +10,6 @@ import { useEffect } from "react";
 import { Redirect } from "react-router-dom";
 
 
-/**
-  ~ What it does? ~
-
-  Displays a lists of events
-
-  ~ How can I use? ~
-
-  <Events
-    contracts={readContracts}
-    contractName="YourContract"
-    eventName="SetPurpose"
-    localProvider={localProvider}
-    mainnetProvider={mainnetProvider}
-    startBlock={1}
-  />
-**/
-
-
-
-
 export default function Requests({
   address,
   signer,
@@ -44,19 +24,99 @@ export default function Requests({
 
   const columns = [
     {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+      sorter: {
+        compare: (a, b) => a.date - b.date
+      },
+      width: '10%',
+      align: 'center',
+    },
+    {
       title: 'Creator address',
       dataIndex: 'creator_addr',
       key: 'creator_addr',
+      sorter: {
+        compare: (a, b) => a.creator_addr - b.creator_addr
+      },
+      ellipsis: true,
+      align: 'center',
     },
     {
-      title: 'Value',
-      dataIndex: 'value',
-      key: 'value',
+      title: 'Amount',
+      dataIndex: 'amount',
+      key: 'amount',
+      sorter: {
+        compare: (a, b) => a.amount - b.amount
+      },
+      width: '15%',
+      align: 'center',
+    },
+    {
+      title: 'Receipt',
+      dataIndex: 'receipt',
+      key: 'receipt',
+      width: '10%',
+      align: 'center',
+    },
+    {
+      title: <div>Category</div>,
+      dataIndex: 'category',
+      key: 'category',
+      width: '15%',
+      filters: [
+        {
+          text: 'Processing',
+          value: 'Processing',
+        },
+        {
+          text: 'Approved',
+          value: 'Approved',
+        },
+        {
+          text: 'Denied',
+          value: 'Denied',
+        },
+      ],
+      onFilter: (value, record) => record.status.indexOf(value) === 0,
+      sorter: {
+        compare: (a, b) => a.category - b.category
+      },
+      align: 'center',
+    },
+    {
+      title: 'Comment',
+      dataIndex: 'comment',
+      key: 'comment',
+      width: '15%',
+      align: 'center',
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      sorter: {
+        compare: (a, b) => a.status - b.status
+      },
+      align: 'center',
+      width: '15%',
+      filters: [
+        {
+          text: 'Processing',
+          value: 'Processing',
+        },
+        {
+          text: 'Approved',
+          value: 'Approved',
+        },
+        {
+          text: 'Denied',
+          value: 'Denied',
+        },
+      ],
+      onFilter: (value, record) => record.status.indexOf(value) === 0,
+      ellipsis: true,
     },
   ];
 
@@ -66,11 +126,15 @@ export default function Requests({
       {
         creator_addr:
           <Address address={req.reimbursementAddress} fontSize={16} />,
-        value: req.amount,
-        status: req.processed ? (req.approved ? "Approved" : "Denied") : "In process",
-        description: req.description,
+        amount: req.amount.toNumber(),
+        status: req.processed ? (req.approved ? "Approved" : "Denied") : "Processing",
+        comment: req.description,
         key: req.id,
-        url: req.url
+        url: req.url,
+        date: (new Date(req.date.toNumber())).toLocaleDateString("en-US"),
+        category: req.category,
+        receipt:
+          <Image width={25} height={25} src={req.url} />
       }
     ));
     setRequests(newRequests);
@@ -79,7 +143,7 @@ export default function Requests({
   useEffect(() => {
     async function getReqs() {
       if (refundInstance) {
-        const ret = isApprover ? 
+        const ret = isApprover ?
           await refundInstance.connect(signer).getMembersRequests() :
           await refundInstance.getRequests();
 
@@ -89,47 +153,6 @@ export default function Requests({
     }
     getReqs();
   }, [refundInstance]);
-
-  /*const requests = [
-    {
-      creator_addr:
-        <Address address='0x823dCC4546070A46D66Af5e02747e74C69f3d509' fontSize={16} />,
-      value: '$24.00',
-      status: 'In progress',
-      description: "Jedan dva tri",
-      key: 1
-    },
-    {
-      creator_addr:
-        <Address address='0x80ddCC6446070A46D66Af5e02747e71569f3d509' fontSize={16} />,
-      value: '$35.00',
-      status: 'Approved',
-      description: "nikola",
-      key: 2
-    },
-  ];*/
-
-  /*<List
-          bordered
-          dataSource={requests}
-          grid={{ gutter: 16, column: 4 }}
-          renderItem={item => {
-            return (
-              <List.Item key={item.creator_addr + "_" + item.value + "_" + item.status}>
-                <Address address={item.creator_addr} fontSize={16} />
-                {item.value}
-                {item.status}
-              </List.Item>
-            );
-          }}
-        /> 
-        
-        
-        <Alert style={{ margin: '16px 0' }} message={record.description} />
-        <Input readonly placeholder={record.description}></Input>
-        */
-
-
 
   function previewContent() {
     if (buttonPopup) return (
@@ -143,73 +166,30 @@ export default function Requests({
     else {
       return (
         <div>
-          {!signer && <Redirect to="/"/>}
+          {!signer && <Redirect to="/" />}
           <Table
+            size="large"
             columns={columns}
             dataSource={requests}
-            expandable={{
-              expandedRowRender: record => (
-                <div style={{ margin: 0 }}>
-                  <Row gutter={[8, 8]}>
-                    <Col span={10} style={{ textAlign: "center" }}>
-                      Receipt<br />
-                      <Image
-                        width={120}
-                        src={record.url}
-                      />
-                    </Col>
-                    <Col span={14} style={{ textAlign: "center" }}>
-                      <Row style={{ height: "50%" }}>
-                        <Col span={24} style={{ textAlign: "center" }}>
-                          Additional comment
-                          <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.description}</div>
-                        </Col>
-                      </Row>
-                      {isApprover && <Row style={{ height: "50%", display: "flex" }}>
-                        <Col span={16} offset={8} style={{ textAlign: "center", alignSelf: "flex-end" }}>
-                          {record.status === "In process" && (
-                          <>
-                          <Button
-                            onClick={async () => {
-                              try {
-                                let ret = await refundInstance.connect(signer)
-                                  .processRequest(record.key, true);
-                                console.log(ret);
-                              } catch (error) {
-                                console.log(error);
-                              }
-                            }}
-                          >Approve</Button>
-                          &nbsp; &nbsp;
-                          <Button
-                            onClick={async () => {
-                              try {
-                                let ret = await refundInstance.connect(signer)
-                                  .processRequest(record.key, false);
-                                console.log(ret);
-                              } catch (error) {
-                                console.log(error);
-                              }
-                            }}
-                          >Deny</Button>
-                          </>)}
 
-                        </Col>
-                      </Row>}
-                    </Col>
-                  </Row>
-                </div>
-              ),
-            }}
           />
           <Button
             onClick={async () => {
               console.log("***********Refresh*************");
-              let done = isApprover ? 
+              let done = isApprover ?
                 await refundInstance.connect(signer).getMembersRequests() :
                 await refundInstance.getRequests();
 
               console.log(done);
+              console.log(done[0].amount);
+              console.log("***********amount*************");
+              console.log(done[0].amount.toNumber());
+              console.log("***********date*************");
+              console.log(done[0].date.toNumber());
+              console.log("***********date1*************");
+              let date1 = new Date(done[0].date.toNumber())
+              console.log(date1.toLocaleDateString("en-US"));
+              
               onRequestsChange(done);
               console.log("***********Refresh*************");
             }}
@@ -220,7 +200,7 @@ export default function Requests({
   }
 
   return (
-    <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+    <div style={{ width: 1000, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
       <h2>
         Requests &nbsp;
         <Button

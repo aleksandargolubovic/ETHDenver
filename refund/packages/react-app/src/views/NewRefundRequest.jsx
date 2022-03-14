@@ -25,6 +25,7 @@ export default function NewRefundRequest({
   refundInstance,
 }) {
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
   const [receiptImages, setReceiptImages] = useState([]);
   const [recImageURLs, setRecImageURLs] = useState([]);
   const [refundAmount, setRefundAmount] = useState("0");
@@ -53,36 +54,6 @@ export default function NewRefundRequest({
         </div>)
     }
   }
-
-
-  /*
-   <Input
-              type="file" accept="image/*"
-              addonAfter={
-                <div>
-                  Scan
-                </div>
-              }
-              onChange={onImageChange}
-            />
-            {recImageURLs.map(imageSrc => <img src={imageSrc} style={{ marginTop: 8, width: 350 }} />)}
-
-
-
-
-            <Row>
-            <Col span={12} style={{ textAlign: "center" }}>
-              <h4>Upload receipt</h4><br />
-              <UploadPhoto />
-            </Col>
-            <Col span={12} style={{ textAlign: "center" }}>
-              <h4>refund amount</h4><br />
-              {previewRefundAmount()}
-            </Col>            
-          </Row>
-            
-  */
-
 
   useEffect(async () => {
     console.log("***************receiptImages************************");
@@ -124,6 +95,9 @@ export default function NewRefundRequest({
   return (
     <div>
       <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto" }}>
+      <div style={{top: "-10px", right: "-10px"}}>
+            X
+        </div>
         <h2>Add new refund request</h2>
         <Divider />
         <div style={{ margin: 8 }}>
@@ -135,6 +109,13 @@ export default function NewRefundRequest({
           <Divider />
           <h4>Refund amount</h4>
           {previewRefundAmount()}
+          <Divider />
+          <h4>Category</h4>
+          <Input
+            onChange={e => {
+              setCategory(e.target.value);
+            }}
+          />
           <Divider />
           <h4>Additional comment</h4>
           <TextArea
@@ -164,13 +145,18 @@ export default function NewRefundRequest({
                 console.log(signer);
                 console.log("*********************refundAmount******************");
                 console.log(refundAmount);
+                let date = (new Date()).getTime();
+                console.log("*********************date******************");
+                console.log(date);
 
                 try{
                 let done = await refundInstance.connect(signer).createRequest(
                   description,
                   url,
                   address,
-                  refundAmount
+                  refundAmount,
+                  date,
+                  category
                 );}
                 catch(error){
                   console.error(error);

@@ -16,6 +16,8 @@ contract Refund is ReentrancyGuard, AccessControl {
   struct ReimbursementRequest {
     uint256 id;
     uint256 amount;
+    uint256 date;
+    string category;
     string description;
     string url;
     bool processed;
@@ -69,7 +71,9 @@ contract Refund is ReentrancyGuard, AccessControl {
     string calldata description,
     string calldata url,
     address reimbursementAddress,
-    uint256 amount)
+    uint256 amount,
+    uint256 date,
+    string calldata category)
     external
     onlyMember("Only members are allowed to create requests") {
 
@@ -77,6 +81,8 @@ contract Refund is ReentrancyGuard, AccessControl {
     ReimbursementRequest storage request = reimbursementRequests[requestId];
     request.id = requestId;
     request.amount = amount;
+    request.category = category;
+    request.date = date;
     request.description = description;
     request.url = url;
     request.reimbursementAddress = payable(reimbursementAddress);
