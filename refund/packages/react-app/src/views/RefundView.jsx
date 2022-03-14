@@ -10,6 +10,8 @@ import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
 import { Transactor } from "../helpers";
 import { Redirect } from "react-router-dom";
+import { useEventListener } from "eth-hooks/events/useEventListener";
+
 
 export default function RefundView({
   //userSigner,
@@ -62,6 +64,43 @@ export default function RefundView({
   
   const refundBalance = useBalance(localProvider, refundAddress);
 
+  //const events = useEventListener(contracts, contractName, eventName, localProvider, startBlock);
+//event BalanceIncreased(address indexed fromAddress, uint256 amount);
+  const addNewEvent = useCallback((...listenerArgs) => {
+    if (listenerArgs != null && listenerArgs.length > 0) {
+        const newEvent = listenerArgs[listenerArgs.length - 1];
+        if (newEvent.event != null && newEvent.logIndex != null && newEvent.transactionHash != null) {
+          console.log("NEW EVENT: ", newEvent);
+          notification.info({
+            message: newEvent.event,
+            description: "amount: " + newEvent.args.amount + ", sender: " + newEvent.args.fromAddress,
+            placement: "bottomRight",
+          });
+            // const newMap = new Map([[getEventKey(newEvent), newEvent]]);
+            // setEventMap((oldMap) => new Map([...oldMap, ...newMap]));
+        }
+    }
+  }, []);
+
+  useEffect(() => {
+    // if (provider) {
+    //     // if you want to read _all_ events from your contracts, set this to the block number it is deployed
+    //     provider.resetEventsBlock(startBlock);
+    // }
+    if (refundInstance) {
+        try {
+          refundInstance.on("BalanceIncreased", addNewEvent);
+          console.log("SUBSCRIBED");
+            return () => {
+              refundInstance.off("BalanceIncreased", addNewEvent);
+            };
+        }
+        catch (e) {
+            console.log(e);
+        }
+    }
+}, [refundInstance]);//,provider, startBlock, contracts, contractName, eventName, addNewEvent]);
+
   const createNewRefund = useCallback((showDeployForm) => {
     setShowDeployForm(showDeployForm);
   }, []);
@@ -72,7 +111,7 @@ export default function RefundView({
   //   setShowRefundInfo(ret);
   // }, [refundInstance]);
 
-  console.log("SIGNERRRRRR: ", signer);
+  //console.log("SIGNERRRRRR: ", signer);
 
   const initializeRefundContract = async () => {
     const addr = await registryContract.refundOrgs(name);
