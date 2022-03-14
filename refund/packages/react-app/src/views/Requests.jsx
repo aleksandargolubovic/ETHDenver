@@ -1,5 +1,4 @@
 import { Alert, Input, Button, List, Image, Divider } from "antd";
-import { useEventListener } from "eth-hooks/events/useEventListener";
 import { Address, UploadPhoto } from "../components";
 import { Row, Col, Table, Tag, Space } from 'antd';
 import { AlignCenterOutlined, PlusSquareOutlined, PlusCircleFilled } from "@ant-design/icons";
@@ -8,6 +7,7 @@ import { NewRefundRequest } from "./index.js"
 import { useState } from 'react'
 import { useEffect } from "react";
 import { Redirect } from "react-router-dom";
+import { useCallback } from "react";
 
 
 export default function Requests({
@@ -16,9 +16,8 @@ export default function Requests({
   refundInstance,
   isApprover,
 }) {
-  // 📟 Listen for broadcast events
-  //const events = useEventListener(contracts, contractName, eventName, localProvider, startBlock);
 
+  const EVENT_NAME = "NewRequestCreated";
   const [buttonPopup, setButtonPopup] = useState(false);
   const [requests, setRequests] = useState([]);
 
@@ -140,18 +139,46 @@ export default function Requests({
     setRequests(newRequests);
   }
 
-  useEffect(() => {
-    async function getReqs() {
-      if (refundInstance) {
-        const ret = isApprover ?
-          await refundInstance.connect(signer).getMembersRequests() :
-          await refundInstance.getRequests();
+  const getReqs = async (retry = false) => {
+    if (refundInstance) {
+      const ret = isApprover ?
+        await refundInstance.getRequests() :
+        await refundInstance.connect(signer).getMembersRequests();
 
-        console.log(ret);
-        onRequestsChange(ret);
+      console.log(ret);
+      onRequestsChange(ret);
+
+      if (retry && ret.length === requests.length) {
+        setTimeout(() => {
+          getReqs();
+        }, 10);
       }
     }
+  }
+
+  const addNewEvent = useCallback((...listenerArgs) => {
+    if (listenerArgs != null && listenerArgs.length > 0) {
+      const newEvent = listenerArgs[listenerArgs.length - 1];
+      if (newEvent.event != null && newEvent.logIndex != null && newEvent.transactionHash != null) {
+        getReqs(true);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     getReqs();
+
+    if (refundInstance) {
+      try {
+        refundInstance.on(EVENT_NAME, addNewEvent);
+        return () => {
+          refundInstance.off(EVENT_NAME, addNewEvent);
+        };
+      }
+      catch (e) {
+        console.log(e);
+      }
+  }
   }, [refundInstance]);
 
   function previewContent() {
@@ -177,19 +204,21 @@ export default function Requests({
             onClick={async () => {
               console.log("***********Refresh*************");
               let done = isApprover ?
-                await refundInstance.connect(signer).getMembersRequests() :
-                await refundInstance.getRequests();
+                await refundInstance.getRequests() :
+                await refundInstance.connect(signer).getMembersRequests();
+                
 
               console.log(done);
-              console.log(done[0].amount);
-              console.log("***********amount*************");
-              console.log(done[0].amount.toNumber());
-              console.log("***********date*************");
-              console.log(done[0].date.toNumber());
-              console.log("***********date1*************");
-              let date1 = new Date(done[0].date.toNumber())
-              console.log(date1.toLocaleDateString("en-US"));
-              
+              if (done.length > 0) {
+                console.log(done[0].amount);
+                console.log("***********amount*************");
+                console.log(done[0].amount.toNumber());
+                console.log("***********date*************");
+                console.log(done[0].date.toNumber());
+                console.log("***********date1*************");
+                let date1 = new Date(done[0].date.toNumber())
+                console.log(date1.toLocaleDateString("en-US"));
+              }
               onRequestsChange(done);
               console.log("***********Refresh*************");
             }}

@@ -10,17 +10,13 @@ import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
 import { Transactor } from "../helpers";
 import { Redirect } from "react-router-dom";
-import { useEventListener } from "eth-hooks/events/useEventListener";
 
 
 export default function RefundView({
-  //userSigner,
-  address,
   mainnetProvider,
   localProvider,
   price,
   blockExplorer,
-  //targetNetwork,
   provider,
   chainId,
   contractConfig,
@@ -36,14 +32,15 @@ export default function RefundView({
   const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
   const REGISTRY = "Registry";
   const REFUND_FACTORY = "RefundFactory";
-  const [owners, setOwners] = useState([])
-  const [approvers, setApprovers] = useState([])
-  const [members, setMembers] = useState([])
-  const [name, setName] = useState('')
+  const [approvers, setApprovers] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [refundName, setRefundName] = useLocalStorage("refundName");
+  const [name, setName] = useState('');
   const [value, setValue] = useState();
-  const [transactions, setTransactions] = useState([])
+  const [transactions, setTransactions] = useState([]);
   const [nameAlreadyExists, setNameAlreadyExists] = useState(false);
   const [showError, setShowError] = useState('');
+  const [wait, setWait] = useState(false);
 
   const contracts = useContractLoader(provider, contractConfig, chainId);
   const registryContract = contracts[REGISTRY];
@@ -53,98 +50,100 @@ export default function RefundView({
   // const RefundFaactoryContractIsDeployed =
   //   useContractExistsAtAddress(provider, refundFactoryContract.address);
 
-  const [refundAddress, setRefundAddress] = useLocalStorage("deployedRefund")
+  const [refundAddress, setRefundAddress] = useLocalStorage("deployedRefund");
   const [showDeployForm, setShowDeployForm] = useState(false);
-  const [deploying, setDeploying] = useState()
-  const [sendingFunds, setSendingFunds] = useState()
+  const [deploying, setDeploying] = useState();
+  const [sendingFunds, setSendingFunds] = useState();
   const [showRefundInfo, setShowRefundInfo] = useState();
-  //const [isApprover, setIsApprover] = useLocalStorage(false);
-  //const [isMember, setIsMember] = useState(false);
   const [numOfRequests, setNumOfRequests] = useState('');
   
   const refundBalance = useBalance(localProvider, refundAddress);
 
-  //const events = useEventListener(contracts, contractName, eventName, localProvider, startBlock);
-//event BalanceIncreased(address indexed fromAddress, uint256 amount);
   const addNewEvent = useCallback((...listenerArgs) => {
     if (listenerArgs != null && listenerArgs.length > 0) {
-        const newEvent = listenerArgs[listenerArgs.length - 1];
-        if (newEvent.event != null && newEvent.logIndex != null && newEvent.transactionHash != null) {
-          console.log("NEW EVENT: ", newEvent);
-          notification.info({
-            message: newEvent.event,
-            description: "amount: " + newEvent.args.amount + ", sender: " + newEvent.args.fromAddress,
-            placement: "bottomRight",
-          });
-            // const newMap = new Map([[getEventKey(newEvent), newEvent]]);
-            // setEventMap((oldMap) => new Map([...oldMap, ...newMap]));
-        }
+      const newEvent = listenerArgs[listenerArgs.length - 1];
+      if (newEvent.event != null && newEvent.logIndex != null && newEvent.transactionHash != null) {
+        console.log("NEW EVENT: ", newEvent);
+        notification.info({
+          message: newEvent.event,
+          description: "amount: " + newEvent.args.amount + ", sender: " + newEvent.args.fromAddress,
+          placement: "bottomRight",
+        });
+      }
     }
   }, []);
 
   useEffect(() => {
-    // if (provider) {
-    //     // if you want to read _all_ events from your contracts, set this to the block number it is deployed
-    //     provider.resetEventsBlock(startBlock);
-    // }
     if (refundInstance) {
+      //setWait(true);
+      const init = async () => {
         try {
-          refundInstance.on("BalanceIncreased", addNewEvent);
-          console.log("SUBSCRIBED");
-            return () => {
-              refundInstance.off("BalanceIncreased", addNewEvent);
-            };
+          const isApprover = await refundInstance.connect(signer).isApprover();
+          const isMember = await refundInstance.connect(signer).isMember();
+          const numOfRequests = await refundInstance.numOfRequests();
+          if (!isApprover && !isMember) {
+            setShowError("You are not part of this organization!");
+          } else {
+            setIsApprover(isApprover);
+            setIsMember(isMember);
+            setNumOfRequests(numOfRequests.toString());
+          }
+        } catch (error) {
+          console.log(error);
         }
-        catch (e) {
-            console.log(e);
-        }
+      }
+      init();
+      setWait(false);
+      try {
+        refundInstance.on("BalanceIncreased", addNewEvent);
+        console.log("SUBSCRIBED");
+          return () => {
+            refundInstance.off("BalanceIncreased", addNewEvent);
+          };
+      }
+      catch (e) {
+        console.log(e);
+      }
     }
-}, [refundInstance]);//,provider, startBlock, contracts, contractName, eventName, addNewEvent]);
+  },[refundInstance]);
 
   const createNewRefund = useCallback((showDeployForm) => {
     setShowDeployForm(showDeployForm);
   }, []);
 
-  // useEffect(()=>{
-  //   const ret = useContractExistsAtAddress(
-  //     provider, refundInstance ? refundInstance.address : "");
-  //   setShowRefundInfo(ret);
-  // }, [refundInstance]);
+  useEffect(() => {
+    console.log("1:RefundName ", refundName);
+    if (refundName && registryContract) {
+      initializeRefundContract();
+    }
+    
+  }, [refundName]);
 
-  //console.log("SIGNERRRRRR: ", signer);
-
-  const initializeRefundContract = async () => {
-    const addr = await registryContract.refundOrgs(name);
+  const initializeRefundContract = async (retry = false) => {
+    //console.log("NAME: ", name);
+    console.log("2:RefundName ", refundName);
+    const addr = await registryContract.refundOrgs(refundName);
     if (addr === NULL_ADDRESS) {
       setShowError("Organization doesn't exist");
-      console.error("Refund contract doesn't exist: ", name);
+      console.error("Refund contract doesn't exist: ", refundName);
       return;
     }
-    const refundInstance = new ethers.Contract(addr, refundAbi, localProvider);
-    const isApprover = await refundInstance.connect(signer).isApprover();
-    const isMember = await refundInstance.connect(signer).isMember();
-    const numOfRequests = await refundInstance.numOfRequests();
-    //console.log(numOfRequests.toString());
-    console.log("You are admin: ", isApprover);
-    console.log("You are member: ", isMember);
-    if (!isApprover && !isMember) {
-      setShowError("You are not part of this organization!");
-    } else {
-      setIsApprover(isApprover);
-      setIsMember(isMember);
+    try {
+      setWait(true);
+      const refundInstance = new ethers.Contract(addr, refundAbi, localProvider);
+      console.log(refundInstance);
       setRefundInstance(refundInstance);
       setRefundAddress(addr);
-      setNumOfRequests(numOfRequests.toString());
-    }
+    } catch (error) {
+      console.log(error);
+    }  
   };
 
   const deployRefund = useCallback(async (name, approvers, members) => {
-    if (!refundFactoryContract) return
-    setDeploying(true)
-    let refund
+    if (!refundFactoryContract) return;
+    setDeploying(true);
+    let refund;
     try {
-      console.log("SIgner: ", signer);
-
       refund = await refundFactoryContract.connect(signer)
         .newRefundOrg(name, approvers, members);
     } catch (error) {
@@ -154,6 +153,9 @@ export default function RefundView({
     }
     console.log("New refund created: ", refund);
     setDeploying(false);
+    console.log("0:RefundName ", refundName);
+    setRefundName(name);
+    setShowDeployForm(false);
   }, [refundFactoryContract])
 
   const checkNameAvailability = async (newName) => {
@@ -161,7 +163,6 @@ export default function RefundView({
       let nameOk;
       try {
         nameOk = await registryContract.refundOrgs(newName);
-        console.log("nameOK", nameOk);
         if (nameOk === NULL_ADDRESS) {
           setNameAlreadyExists(false);
           return true;
@@ -180,7 +181,7 @@ export default function RefundView({
   if (refundAddress) {
     refundInfo = (
       <div>
-        <h2>{name}</h2>
+        <h2>{refundName}</h2>
         <Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
         <Balance value={refundBalance} price={price} />
         <Divider/>
@@ -188,24 +189,6 @@ export default function RefundView({
           <b>You are {isApprover ? "Approver" : isMember ? "Member" : ""}</b>
           <br />
           <b>Number of requests: {numOfRequests}</b>
-
-        {owners&&owners.length>0?(
-          <>
-            <b>Signers:</b>
-            <List
-              bordered
-              dataSource={owners}
-              renderItem={item => {
-                return (
-                  <List.Item key={item + "_ownerEntry"}>
-                    <Address address={item} ensProvider={mainnetProvider} fontSize={12} />
-                  </List.Item>
-                );
-              }}
-            />
-          </>
-        ):<Spin/>}
-
         </div>
         <Divider/>
         <h3>Send funds to this organization:</h3>
@@ -224,7 +207,6 @@ export default function RefundView({
             type={"primary"}
             onClick={async () => {
               const tx = Transactor(signer);
-              console.log("Amount:", value);
               let amount;
               try {
                 amount = ethers.utils.parseEther("" + value);
@@ -232,11 +214,7 @@ export default function RefundView({
                 // failed to parseEther, try something else
                 amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
               }
-              console.log("Amount2:", amount);
-              tx({
-                to: refundAddress,
-                value: amount,
-              });
+              tx({to: refundAddress, value: amount });
             }}
           >
           <SendOutlined /> Send funds
@@ -247,7 +225,7 @@ export default function RefundView({
     refundInfo = (
       <div style={{padding:32}}>
         <Button onClick={() => createNewRefund(true)} type={"primary"} >
-          CREATE NEW REFUND ORG
+          CREATE A NEW REFUND ORG
         </Button>
         <Divider/>
         <div> or enter existing organization name: </div>
@@ -255,12 +233,17 @@ export default function RefundView({
           <Input placeholder="Organization name" 
             style={{ width: 'calc(100% - 100px)' }}
             onChange={async (e) => {
-                setShowError('');
-                checkNameAvailability(e.target.value)
-                setName(e.target.value)
-              }}
-            />
-          <Button type="primary" onClick={initializeRefundContract}>Enter</Button>
+              setShowError('');
+              checkNameAvailability(e.target.value)
+              setName(e.target.value)
+            }}
+          />
+          <Button type="primary" onClick={() => {
+            setRefundName();
+            setRefundName(name);
+          }}
+          >Enter
+          </Button>
         </Input.Group>
         <div>
           {showError !== '' && <label style={{color: 'crimson'}}>{showError}</label>}
@@ -277,7 +260,7 @@ export default function RefundView({
   } else {
     deployForm = (
       <>
-        <h3>Create new Refund Org</h3>
+        <h3>Create a new Refund Organization</h3>
 
         <div style={{ margin: 8}}>
           <div style={{ padding: 4 }}>
@@ -300,22 +283,6 @@ export default function RefundView({
             <EditableTagGroup key="members" setAddresses={setMembers}/>
           </div>
           <Divider />
-         
-          {/* <div style={{ padding: 4 }}>
-            <Input placeholder="Enter Selector i.e add(uint, uint)"
-              onChange={async (e) => {
-                setSelector(e.target.value)
-              }}
-            />
-          </div> */}
-          {/* <div style={{ padding: 4 }}>
-            <Input placeholder="Enter arguments separated by ,"
-              onChange={async (e) => {
-                setParams(e.target.value.split(','))
-              }}
-            />
-          </div> */}
-          {/* {data?data:""} */}
           <Button
             style={{ marginTop: 8 }}
             loading={deploying}
@@ -336,6 +303,7 @@ export default function RefundView({
 
   return (
     <div>
+      {wait ? <Spin/> : (<>
       {!signer && <Redirect to="/"/>}
       <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
         {refundAddress || showDeployForm?<div style={{float:"right", padding:4, cursor:"pointer", fontSize:28}} onClick={()=>{
@@ -344,12 +312,10 @@ export default function RefundView({
           setRefundInstance()
           setNameAlreadyExists(false)
           setShowDeployForm(false)
+          setRefundName("")
         }}>
           x
         </div>:""}
-
-        
-
         <div style={{padding:4}}>
           {refundInfo}
         </div>
@@ -358,6 +324,7 @@ export default function RefundView({
 
       </div>
       <Divider />
+      </>)}
     </div>
   );
 }
