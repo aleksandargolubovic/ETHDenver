@@ -231,7 +231,7 @@ export default function Requests({
   return (
     <div style={{ width: 1000, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
       <h2>
-        Requests &nbsp;
+        {isApprover ? "" : "My" } Requests &nbsp;
         <Button
           icon='+'
           onClick={() => setButtonPopup(!buttonPopup)}

@@ -1,4 +1,4 @@
-import { Button, Card, DatePicker, Divider, Input, List, Progress, Slider, Spin, Switch, notification } from "antd";
+import { Button, Divider, Input, Spin, Statistic, Row, Col, notification } from "antd";
 import { SendOutlined } from "@ant-design/icons";
 import { useContractExistsAtAddress, useContractLoader } from "eth-hooks";
 import React, { useState, useEffect, useCallback } from "react";
@@ -75,7 +75,6 @@ export default function RefundView({
 
   useEffect(() => {
     if (refundInstance) {
-      //setWait(true);
       const init = async () => {
         try {
           const isApprover = await refundInstance.connect(signer).isApprover();
@@ -105,23 +104,19 @@ export default function RefundView({
         console.log(e);
       }
     }
-  },[refundInstance]);
+  }, [refundInstance]);
 
   const createNewRefund = useCallback((showDeployForm) => {
     setShowDeployForm(showDeployForm);
   }, []);
 
   useEffect(() => {
-    console.log("1:RefundName ", refundName);
     if (refundName && registryContract) {
       initializeRefundContract();
     }
-    
   }, [refundName]);
 
-  const initializeRefundContract = async (retry = false) => {
-    //console.log("NAME: ", name);
-    console.log("2:RefundName ", refundName);
+  const initializeRefundContract = async () => {
     const addr = await registryContract.refundOrgs(refundName);
     if (addr === NULL_ADDRESS) {
       setShowError("Organization doesn't exist");
@@ -153,7 +148,6 @@ export default function RefundView({
     }
     console.log("New refund created: ", refund);
     setDeploying(false);
-    console.log("0:RefundName ", refundName);
     setRefundName(name);
     setShowDeployForm(false);
   }, [refundFactoryContract])
@@ -186,9 +180,14 @@ export default function RefundView({
         <Balance value={refundBalance} price={price} />
         <Divider/>
         <div style={{padding:8}}>
-          <b>You are {isApprover ? "Approver" : isMember ? "Member" : ""}</b>
-          <br />
-          <b>Number of requests: {numOfRequests}</b>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Statistic title="User Role" value={isApprover ? "Approver" : isMember ? "Member" : ""}/>
+          </Col>
+          <Col span={12}>
+            <Statistic title="Total Requests" value={numOfRequests}/>
+          </Col>
+        </Row>
         </div>
         <Divider/>
         <h3>Send funds to this organization:</h3>
@@ -206,7 +205,6 @@ export default function RefundView({
             loading={sendingFunds}
             type={"primary"}
             onClick={async () => {
-              const tx = Transactor(signer);
               let amount;
               try {
                 amount = ethers.utils.parseEther("" + value);
@@ -214,7 +212,11 @@ export default function RefundView({
                 // failed to parseEther, try something else
                 amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
               }
-              tx({to: refundAddress, value: amount });
+              //tx({to: refundAddress, value: amount });
+              const tx = signer.sendTransaction({
+                to: refundAddress,
+                value: amount
+              });
             }}
           >
           <SendOutlined /> Send funds
