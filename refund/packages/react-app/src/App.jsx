@@ -54,7 +54,7 @@ const { ethers } = require("ethers");
 */
 
 /// 📡 What chain are your contracts deployed to?
-const initialNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.testnetMetis;// <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -117,7 +117,6 @@ function App(props) {
   
   const userSigner = userProviderAndSigner.signer;
 
-
   useEffect(() => {
     async function getAddress() {
       if (userSigner) {
@@ -126,10 +125,6 @@ function App(props) {
       }
     }
     getAddress();
-    if (!userSigner) {
-      console.log("TESTTTTTT");
-
-    }
   }, [userSigner]);
 
   // You can warn the user if you would like them to be on a specific network

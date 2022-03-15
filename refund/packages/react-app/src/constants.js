@@ -201,6 +201,14 @@ export const NETWORKS = {
     gasPrice: 1000000000,
     faucet: "https://faucet.fantom.network/",
   },
+  testnetMetis: {
+    name: "testnetMetis",
+    color: "#01dbcd",
+    chainId: 588,
+    gasPrice: 1000000000,
+    rpcUrl: "https://stardust.metis.io/?owner=588",
+    blockExplorer: "https://stardust-explorer.metis.io/",
+  },
 };
 
 export const NETWORK = chainId => {

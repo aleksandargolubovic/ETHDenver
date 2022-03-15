@@ -56,6 +56,9 @@ export default function Transactor(providerOrSigner, gasPrice, etherscan) {
       if (network.chainId === 100) {
         etherscanTxUrl = "https://blockscout.com/poa/xdai/tx/";
       }
+      if (network.chainId === 588) {
+        etherscanTxUrl =  "https://stardust-explorer.metis.io/"
+      }
 
       try {
         let result;
