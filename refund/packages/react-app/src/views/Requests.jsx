@@ -178,7 +178,7 @@ export default function Requests({
       catch (e) {
         console.log(e);
       }
-  }
+    }
   }, [refundInstance]);
 
   function previewContent() {
@@ -195,7 +195,7 @@ export default function Requests({
         <div>
           {!signer && <Redirect to="/" />}
           <Table
-            size="large"
+            size="midle"
             columns={columns}
             dataSource={requests}
 
@@ -206,21 +206,12 @@ export default function Requests({
               let done = isApprover ?
                 await refundInstance.getRequests() :
                 await refundInstance.connect(signer).getMembersRequests();
-                
-
               console.log(done);
               if (done.length > 0) {
-                console.log(done[0].amount);
-                console.log("***********amount*************");
-                console.log(done[0].amount.toNumber());
-                console.log("***********date*************");
-                console.log(done[0].date.toNumber());
-                console.log("***********date1*************");
                 let date1 = new Date(done[0].date.toNumber())
                 console.log(date1.toLocaleDateString("en-US"));
               }
               onRequestsChange(done);
-              console.log("***********Refresh*************");
             }}
           >Refresh</Button>
         </div>
@@ -232,10 +223,10 @@ export default function Requests({
     <div style={{ width: 1000, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
       <h2>
         Requests &nbsp;
-        <Button
+        {!buttonPopup && <Button
           icon='+'
           onClick={() => setButtonPopup(!buttonPopup)}
-        />
+        />}
       </h2>
       {previewContent()}
     </div>

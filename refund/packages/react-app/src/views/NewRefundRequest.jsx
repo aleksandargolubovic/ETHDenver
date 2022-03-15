@@ -1,12 +1,13 @@
-import { Row, Col, Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch } from "antd";
+import { Select, Row, Col, Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch } from "antd";
 import React, { useState, useEffect } from "react";
 import { utils } from "ethers";
-import { SyncOutlined } from "@ant-design/icons";
+import { SyncOutlined, CloseSquareOutlined, CloseOutlined } from "@ant-design/icons";
 
 import { Address, Balance, Events, UploadPhoto } from "../components";
 import { addToIPFS, getFromIPFS, urlFromCID } from "../helpers/ipfs";
 
 const { TextArea } = Input;
+const { Option } = Select;
 
 const Tesseract = require('tesseract.js');
 
@@ -27,14 +28,8 @@ export default function NewRefundRequest({
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [receiptImages, setReceiptImages] = useState([]);
-  const [recImageURLs, setRecImageURLs] = useState([]);
   const [refundAmount, setRefundAmount] = useState("0");
   const [recognitionState, setRecognitionState] = useState("idle");
-
-
-  function onImageChange(e) {
-    setReceiptImages([...e.target.files]);
-  }
 
   function previewRefundAmount() {
     console.log(recognitionState);
@@ -46,6 +41,7 @@ export default function NewRefundRequest({
       return (
         <div>
           <Input
+            style={{ width: 200 }}
             value={refundAmount}
             onChange={e => {
               setRefundAmount(e.target.value);
@@ -60,10 +56,6 @@ export default function NewRefundRequest({
     console.log(receiptImages);
     if (receiptImages.length < 1) return;
     const newImageUrls = [];
-    //newImageUrls.push(receiptImages.at(0).url)
-    //receiptImages.forEach(image => newImageUrls.push(image.url));
-    //setRecImageURLs(newImageUrls);
-
     console.log(receiptImages.at(0).url);
     let src = receiptImages.at(0).url;
     if (!src) {
@@ -94,15 +86,25 @@ export default function NewRefundRequest({
 
   return (
     <div>
-      <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto" }}>
-      <div style={{top: "-10px", right: "-10px"}}>
-            X
-        </div>
-        <h2>Add new refund request</h2>
+      <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto" }}>
+
+        <Row style={{ paddingTop: 0, width: 372, margin: "auto" }}>
+          <Col span={23}>
+          </Col>
+          <Col span={1}>
+            <Button
+              icon={<CloseOutlined />}
+              size="small"
+              type="text"
+              onClick={async () => { trigger(false) }}
+            />
+          </Col>
+        </Row>
+        <h2>Add new reimbursement request</h2>
         <Divider />
         <div style={{ margin: 8 }}>
           <h4>Upload receipt</h4>
-          <UploadPhoto 
+          <UploadPhoto
             fileList={receiptImages}
             setFileList={setReceiptImages}
           />
@@ -111,13 +113,21 @@ export default function NewRefundRequest({
           {previewRefundAmount()}
           <Divider />
           <h4>Category</h4>
-          <Input
+          <Select
+            style={{ width: 200 }}
             onChange={e => {
-              setCategory(e.target.value);
-            }}
-          />
+              setCategory(e);
+            }}>
+            <Option value="Equipment">Equipment</Option>
+            <Option value="Home Office">Home Office</Option>
+            <Option value="Meals and Entertainment">Meals and Entertainment</Option>
+            <Option value="Office Supplies">Office Supplies</Option>
+            <Option value="Other">Other</Option>
+            <Option value="Travel">Travel</Option>
+          </Select>
+
           <Divider />
-          <h4>Additional comment</h4>
+          <h4>Comment</h4>
           <TextArea
             autoSize={{ minRows: 2, maxRows: 3 }}
             onChange={e => {
@@ -148,21 +158,26 @@ export default function NewRefundRequest({
                 let date = (new Date()).getTime();
                 console.log("*********************date******************");
                 console.log(date);
+                console.log("*********************category******************");
+                console.log(category);
 
-                try{
-                let done = await refundInstance.connect(signer).createRequest(
-                  description,
-                  url,
-                  address,
-                  refundAmount,
-                  date,
-                  category
-                );}
-                catch(error){
+
+
+                try {
+                  let done = await refundInstance.connect(signer).createRequest(
+                    description,
+                    url,
+                    address,
+                    refundAmount,
+                    date,
+                    category
+                  );
+                }
+                catch (error) {
                   console.error(error);
                 }
                 trigger(false);
-                  
+
               }, function (err) {
                 console.log(err);
               });
