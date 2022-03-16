@@ -1,8 +1,7 @@
 import { Alert, Input, Button, List, Image, Divider, Card } from "antd";
-import { Address, UploadPhoto, Balance } from "../components";
+import { Address, Balance } from "../components";
 import { Row, Col, Table, Tag, Space } from 'antd';
-import { AlignCenterOutlined, PlusSquareOutlined, PlusCircleFilled } from "@ant-design/icons";
-import { Popup } from "../components"
+import { CheckCircleOutlined, SyncOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { NewRefundRequest } from "./index.js"
 import { useState } from 'react'
 import { useEffect } from "react";
@@ -94,7 +93,7 @@ export default function Requests({
     },
     {
       title: 'Status',
-      dataIndex: 'status',
+      dataIndex: 'display_status',
       key: 'status',
       sorter: {
         compare: (a, b) => a.status - b.status
@@ -119,33 +118,6 @@ export default function Requests({
     },
   ];
 
-
-  const inner_columns = [
-    {
-      title: 'Receipt',
-      dataIndex: 'receipt',
-      key: 'receipt',
-      align: 'center',
-      width: '25%'
-    },
-    {
-      title: 'Description',
-      dataIndex: 'comment',
-      key: 'comment',
-      align: 'center',
-      width: '50%'
-    },
-    {
-      title: 'Status change',
-      dataIndex: 'status_change',
-      key: 'status_change',
-      align: 'center',
-      width: '25%',
-      hidden: true
-    },
-
-  ].filter(item => !item.hidden);
-
   function onRequestsChange(reqList) {
     const newRequests = [];
 
@@ -154,8 +126,13 @@ export default function Requests({
         {
           creator_addr:
             <Address address={req.reimbursementAddress} fontSize={16} />,
-          amount: <Balance balance={utils.parseEther((req.amount).toString())} provider={localProvider} price={price} size={16} />,
+          amount: <Balance balance={req.amount} provider={localProvider} price={price} size={16} />,
           status: req.processed ? (req.approved ? "Approved" : "Denied") : "Processing",
+          display_status: req.processed ?
+            (req.approved ?
+              <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag> :
+              <Tag icon={<CloseCircleOutlined />} color="error">Denied</Tag>) :
+            <Tag icon={<SyncOutlined spin />} color="processing">Processing</Tag>,
           comment: req.description,
           key: req.id,
           url: req.url,
@@ -163,32 +140,6 @@ export default function Requests({
           category: req.category,
           receipt:
             <Image width={25} height={25} src={req.url} />,
-          status_change:
-            <>
-              <Button
-                onClick={async () => {
-                  try {
-                    let ret = await refundInstance.connect(signer)
-                      .processRequest(req.id, true);
-                    console.log(ret);
-                  } catch (error) {
-                    console.log(error);
-                  }
-                }}
-              >Approve</Button>
-              &nbsp; &nbsp;
-              <Button
-                onClick={async () => {
-                  try {
-                    let ret = await refundInstance.connect(signer)
-                      .processRequest(req.id, false);
-                    console.log(ret);
-                  } catch (error) {
-                    console.log(error);
-                  }
-                }}
-              >Deny</Button>
-            </>
         }
       )
     });
@@ -259,7 +210,7 @@ export default function Requests({
               expandedRowRender: record => (
                 <div style={{ margin: 0 }}>
                   <Row gutter={[8, 8]}>
-                    <Col span={6} offset={isApprover && record.status === "Processing" ? 0 : 3} style={{ textAlign: "center" }}>
+                    <Col span={5} offset={isApprover && record.status === "Processing" ? 0 : 4} style={{ textAlign: "center" }}>
                       <Card title="Receipt" bordered={false} size="small">
                         <Image
                           width={50}
@@ -274,10 +225,11 @@ export default function Requests({
                       </Card>
                     </Col>
                     {isApprover && record.status === "Processing" &&
-                      <Col span={6} style={{ textAlign: "center" }}>
-                        <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height:"100%" }}> 
+                      <Col span={7} style={{ textAlign: "center" }}>
+                        <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height: "100%" }}>
                           <div style={{ alignItems: "center" }}>
                             <Button
+                              style={{ borderColor: "green", color: "green", width: "45%" }}
                               onClick={async () => {
                                 try {
                                   let ret = await refundInstance.connect(signer)
@@ -290,6 +242,7 @@ export default function Requests({
                             >Approve</Button>
                             &nbsp; &nbsp;
                             <Button
+                              style={{ borderColor: "red", color: "red", width: "45%" }}
                               onClick={async () => {
                                 try {
                                   let ret = await refundInstance.connect(signer)
@@ -299,7 +252,7 @@ export default function Requests({
                                   console.log(error);
                                 }
                               }}
-                            >Deny</Button>
+                            ><div>Deny</div></Button>
                           </div>
                         </Card>
                       </Col>
@@ -308,11 +261,9 @@ export default function Requests({
                 </div>
               ),
             }}
-
           />
           <Button
             onClick={async () => {
-              console.log("***********Refresh*************");
               let done = isApprover ?
                 await refundInstance.getRequests() :
                 await refundInstance.connect(signer).getMembersRequests();

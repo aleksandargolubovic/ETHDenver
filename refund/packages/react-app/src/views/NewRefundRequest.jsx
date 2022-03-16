@@ -1,9 +1,9 @@
-import { Select, Row, Col, Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch } from "antd";
+import { Select, Row, Col, Button, Divider, Input, Spin } from "antd";
 import React, { useState, useEffect } from "react";
 import { utils } from "ethers";
-import { SyncOutlined, CloseSquareOutlined, CloseOutlined } from "@ant-design/icons";
+import { CloseOutlined } from "@ant-design/icons";
 
-import { Address, Balance, Events, UploadPhoto, EtherInput } from "../components";
+import { UploadPhoto, RefundAmountInput } from "../components";
 import { addToIPFS, getFromIPFS, urlFromCID } from "../helpers/ipfs";
 
 const { TextArea } = Input;
@@ -12,15 +12,8 @@ const { Option } = Select;
 const Tesseract = require('tesseract.js');
 
 export default function NewRefundRequest({
-  purpose,
   address,
-  mainnetProvider,
-  localProvider,
-  yourLocalBalance,
   price,
-  tx,
-  readContracts,
-  writeContracts,
   trigger,
   signer,
   refundInstance,
@@ -30,6 +23,7 @@ export default function NewRefundRequest({
   const [receiptImages, setReceiptImages] = useState([]);
   const [refundAmount, setRefundAmount] = useState("0");
   const [recognitionState, setRecognitionState] = useState("idle");
+  const [display, setDisplay] = useState();
 
   function previewRefundAmount() {
     console.log(recognitionState);
@@ -40,20 +34,20 @@ export default function NewRefundRequest({
     else {
       return (
         <div>
-          <EtherInput
+          <RefundAmountInput
             autofocus
             price={price}
             placeholder="Refund amount"
             value={refundAmount}
-            onChange={v => {console.log("value**************************"); console.log(refundAmount*10e18);console.log(refundAmount);setRefundAmount(v);}}
+            onChange={v => { setRefundAmount(v); }}
+            display={display}
+            setDisplay={setDisplay}
           />
         </div>)
     }
   }
 
   useEffect(async () => {
-    console.log("***************receiptImages************************");
-    console.log(receiptImages);
     if (receiptImages.length < 1) return;
     const newImageUrls = [];
     console.log(receiptImages.at(0).url);
@@ -80,6 +74,7 @@ export default function NewRefundRequest({
       console.log(amount);
       const ethValue = amount / price;
       setRefundAmount(ethValue);
+      setDisplay(amount);
       setRecognitionState("idle");
     })
 
@@ -90,9 +85,7 @@ export default function NewRefundRequest({
       <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto" }}>
 
         <Row style={{ paddingTop: 0, width: 372, margin: "auto" }}>
-          <Col span={23}>
-          </Col>
-          <Col span={1}>
+          <Col span={1} offset={23}>
             <Button
               icon={<CloseOutlined />}
               size="small"
@@ -116,7 +109,7 @@ export default function NewRefundRequest({
           <h4>Category</h4>
           <Select
             placeholder={"Category"}
-            style={{ width: 348, textAlign:"left"}}
+            style={{ width: 348, textAlign: "left" }}
             onChange={e => {
               setCategory(e);
             }}>
@@ -142,33 +135,15 @@ export default function NewRefundRequest({
             style={{ marginTop: 8 }}
             onClick={async () => {
               addToIPFS(receiptImages.at(0).originFileObj).then(async (result) => {
-                console.log(result.path);
                 let url = urlFromCID(result.cid);
-                console.log(url);
-                console.log("*********************isapprover******************");
                 const isApprover = await refundInstance.connect(signer).isApprover();
-                console.log(isApprover);
-                console.log("*********************description******************");
-                console.log(description);
-                console.log("*********************url******************");
-                console.log(url);
-                console.log("*********************address******************");
-                console.log(address);
-                console.log("*********************signer******************");
-                console.log(signer);
-                console.log("*********************refundAmount******************");
-                console.log(refundAmount*10e18);
                 let date = (new Date()).getTime();
-                console.log("*********************date******************");
-                console.log(date);
-                console.log("*********************category******************");
-                console.log(category);
                 try {
                   let done = await refundInstance.connect(signer).createRequest(
                     description,
                     url,
                     address,
-                    refundAmount*10e18,
+                    utils.parseEther("" + refundAmount),
                     date,
                     category
                   );
