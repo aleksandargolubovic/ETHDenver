@@ -45,7 +45,7 @@ export default function NewRefundRequest({
             price={price}
             placeholder="Refund amount"
             value={refundAmount}
-            onChange={v => {setRefundAmount(v);}}
+            onChange={v => {console.log("value**************************"); console.log(refundAmount*10e18);console.log(refundAmount);setRefundAmount(v);}}
           />
         </div>)
     }
@@ -78,7 +78,8 @@ export default function NewRefundRequest({
       let totalPosition = text.indexOf("Total") + 6;
       let amount = text.substring(totalPosition, text.indexOf("\n", totalPosition));
       console.log(amount);
-      setRefundAmount(amount);
+      const ethValue = amount / price;
+      setRefundAmount(ethValue);
       setRecognitionState("idle");
     })
 
@@ -114,7 +115,8 @@ export default function NewRefundRequest({
           <Divider />
           <h4>Category</h4>
           <Select
-            style={{ width: 348 }}
+            placeholder={"Category"}
+            style={{ width: 348, textAlign:"left"}}
             onChange={e => {
               setCategory(e);
             }}>
@@ -127,12 +129,13 @@ export default function NewRefundRequest({
           </Select>
 
           <Divider />
-          <h4>Comment</h4>
+          <h4>Description</h4>
           <TextArea
             autoSize={{ minRows: 2, maxRows: 3 }}
             onChange={e => {
               setDescription(e.target.value);
             }}
+            placeholder={"Description"}
           />
           <Divider />
           <Button
@@ -154,21 +157,18 @@ export default function NewRefundRequest({
                 console.log("*********************signer******************");
                 console.log(signer);
                 console.log("*********************refundAmount******************");
-                console.log(refundAmount);
+                console.log(refundAmount*10e18);
                 let date = (new Date()).getTime();
                 console.log("*********************date******************");
                 console.log(date);
                 console.log("*********************category******************");
                 console.log(category);
-
-
-
                 try {
                   let done = await refundInstance.connect(signer).createRequest(
                     description,
                     url,
                     address,
-                    refundAmount,
+                    refundAmount*10e18,
                     date,
                     category
                   );

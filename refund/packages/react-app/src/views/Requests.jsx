@@ -1,4 +1,4 @@
-import { Alert, Input, Button, List, Image, Divider } from "antd";
+import { Alert, Input, Button, List, Image, Divider, Card } from "antd";
 import { Address, UploadPhoto, Balance } from "../components";
 import { Row, Col, Table, Tag, Space } from 'antd';
 import { AlignCenterOutlined, PlusSquareOutlined, PlusCircleFilled } from "@ant-design/icons";
@@ -62,16 +62,28 @@ export default function Requests({
       key: 'category',
       filters: [
         {
-          text: 'Processing',
-          value: 'Processing',
+          text: 'Equipment',
+          value: 'Equipment',
         },
         {
-          text: 'Approved',
-          value: 'Approved',
+          text: 'Home Office',
+          value: 'Home Office',
         },
         {
-          text: 'Denied',
-          value: 'Denied',
+          text: 'Meals and Entertainment',
+          value: 'Meals and Entertainment',
+        },
+        {
+          text: 'Office Supplies',
+          value: 'Office Supplies',
+        },
+        {
+          text: 'Other',
+          value: 'Other',
+        },
+        {
+          text: 'Travel',
+          value: 'Travel',
         },
       ],
       onFilter: (value, record) => record.status.indexOf(value) === 0,
@@ -114,21 +126,21 @@ export default function Requests({
       dataIndex: 'receipt',
       key: 'receipt',
       align: 'center',
-      width: '33%'
+      width: '25%'
     },
     {
       title: 'Description',
       dataIndex: 'comment',
       key: 'comment',
       align: 'center',
-      width: '33%'
+      width: '50%'
     },
     {
       title: 'Status change',
       dataIndex: 'status_change',
       key: 'status_change',
       align: 'center',
-      width: '33%',
+      width: '25%',
       hidden: true
     },
 
@@ -136,52 +148,51 @@ export default function Requests({
 
   function onRequestsChange(reqList) {
     const newRequests = [];
-    
+
     reqList.forEach(req => {
       newRequests.push(
-      {
-        creator_addr:
-          <Address address={req.reimbursementAddress} fontSize={16} />,
-        amount: <Balance balance={utils.parseEther(req.amount.toString())} provider={localProvider} price={price} size={16}/>,
-        status: req.processed ? (req.approved ? "Approved" : "Denied") : "Processing",
-        comment: req.description,
-        key: req.id,
-        url: req.url,
-        date: (new Date(req.date.toNumber())).toLocaleDateString("en-US"),
-        category: req.category,
-        receipt:
-          <Image width={25} height={25} src={req.url} />,
-        status_change:
-          <>
-            <Button
-              onClick={async () => {
-                try {
-                  let ret = await refundInstance.connect(signer)
-                    .processRequest(req.id, true);
-                  console.log(ret);
-                } catch (error) {
-                  console.log(error);
-                }
-              }}
-            >Approve</Button>
-            &nbsp; &nbsp;
-            <Button
-              onClick={async () => {
-                try {
-                  let ret = await refundInstance.connect(signer)
-                    .processRequest(req.id, false);
-                  console.log(ret);
-                } catch (error) {
-                  console.log(error);
-                }
-              }}
-            >Deny</Button>
-          </>
-      }
-    )
+        {
+          creator_addr:
+            <Address address={req.reimbursementAddress} fontSize={16} />,
+          amount: <Balance balance={utils.parseEther((req.amount).toString())} provider={localProvider} price={price} size={16} />,
+          status: req.processed ? (req.approved ? "Approved" : "Denied") : "Processing",
+          comment: req.description,
+          key: req.id,
+          url: req.url,
+          date: (new Date(req.date.toNumber())).toLocaleDateString("en-US"),
+          category: req.category,
+          receipt:
+            <Image width={25} height={25} src={req.url} />,
+          status_change:
+            <>
+              <Button
+                onClick={async () => {
+                  try {
+                    let ret = await refundInstance.connect(signer)
+                      .processRequest(req.id, true);
+                    console.log(ret);
+                  } catch (error) {
+                    console.log(error);
+                  }
+                }}
+              >Approve</Button>
+              &nbsp; &nbsp;
+              <Button
+                onClick={async () => {
+                  try {
+                    let ret = await refundInstance.connect(signer)
+                      .processRequest(req.id, false);
+                    console.log(ret);
+                  } catch (error) {
+                    console.log(error);
+                  }
+                }}
+              >Deny</Button>
+            </>
+        }
+      )
     });
     setRequests(newRequests);
-    inner_columns.filter(item => !item.hidden);
   }
 
   const getReqs = async (retry = false) => {
@@ -248,47 +259,49 @@ export default function Requests({
               expandedRowRender: record => (
                 <div style={{ margin: 0 }}>
                   <Row gutter={[8, 8]}>
-                    <Col span={8} offset={isApprover && record.status === "Processing" ? 0 : 3} style={{ textAlign: "center" }}>
-                      <b>Receipt</b> <br/>
-                      <Image
-                        width={50}
-                        height={50}
-                        src={record.url}
-                      />
+                    <Col span={6} offset={isApprover && record.status === "Processing" ? 0 : 3} style={{ textAlign: "center" }}>
+                      <Card title="Receipt" bordered={false} size="small">
+                        <Image
+                          width={50}
+                          height={50}
+                          src={record.url}
+                        />
+                      </Card>
                     </Col>
-                    <Col span={8} style={{ textAlign: "center" }}>
-                      <b>Description</b>
-                      <br/>
-                      <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.comment}</div>
+                    <Col span={12} style={{ textAlign: "center" }}>
+                      <Card title="Description" bordered={false} size="small">
+                        <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.comment}</div>
+                      </Card>
                     </Col>
                     {isApprover && record.status === "Processing" &&
-                      <Col span={8} style={{ textAlign: "center" }}>
-                        <b>Process Request</b><br/>
-                        <div style={{ alignSelf: "center" }}>
-                          <Button
-                            onClick={async () => {
-                              try {
-                                let ret = await refundInstance.connect(signer)
-                                  .processRequest(record.key, true);
-                                console.log(ret);
-                              } catch (error) {
-                                console.log(error);
-                              }
-                            }}
-                          >Approve</Button>
-                          &nbsp; &nbsp;
-                          <Button
-                            onClick={async () => {
-                              try {
-                                let ret = await refundInstance.connect(signer)
-                                  .processRequest(record.key, false);
-                                console.log(ret);
-                              } catch (error) {
-                                console.log(error);
-                              }
-                            }}
-                          >Deny</Button>
-                        </div>
+                      <Col span={6} style={{ textAlign: "center" }}>
+                        <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height:"100%" }}> 
+                          <div style={{ alignItems: "center" }}>
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  let ret = await refundInstance.connect(signer)
+                                    .processRequest(record.key, true);
+                                  console.log(ret);
+                                } catch (error) {
+                                  console.log(error);
+                                }
+                              }}
+                            >Approve</Button>
+                            &nbsp; &nbsp;
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  let ret = await refundInstance.connect(signer)
+                                    .processRequest(record.key, false);
+                                  console.log(ret);
+                                } catch (error) {
+                                  console.log(error);
+                                }
+                              }}
+                            >Deny</Button>
+                          </div>
+                        </Card>
                       </Col>
                     }
                   </Row>
