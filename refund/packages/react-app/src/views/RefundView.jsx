@@ -75,34 +75,40 @@ export default function RefundView({
 
   useEffect(() => {
     if (refundInstance) {
+      console.log("Refund Instance still alive: ", refundInstance);
       const init = async () => {
         try {
-          const isApprover = await refundInstance.connect(signer).isApprover();
-          const isMember = await refundInstance.connect(signer).isMember();
+          const retIsApprover = await refundInstance.connect(signer).isApprover();
+          const retIsMember = await refundInstance.connect(signer).isMember();
           const numOfRequests = await refundInstance.numOfRequests();
-          if (!isApprover && !isMember) {
+          console.log("isAdmin:", retIsApprover, "isMember:", retIsMember)
+          setWait(false);
+          setIsApprover(retIsApprover);
+          setIsMember(retIsMember);
+          setNumOfRequests(numOfRequests.toString());
+          if (!retIsApprover && !retIsMember) {
             setShowError("You are not part of this organization!");
-          } else {
-            setIsApprover(isApprover);
-            setIsMember(isMember);
-            setNumOfRequests(numOfRequests.toString());
+            return;
           }
         } catch (error) {
           console.log(error);
+          setTimeout(() => {
+            init();  
+          }, 100);
+          
         }
       }
       init();
-      setWait(false);
-      try {
-        refundInstance.on("BalanceIncreased", addNewEvent);
-        console.log("SUBSCRIBED");
-          return () => {
-            refundInstance.off("BalanceIncreased", addNewEvent);
-          };
-      }
-      catch (e) {
-        console.log(e);
-      }
+      // try {
+      //   refundInstance.on("BalanceIncreased", addNewEvent);
+      //   console.log("SUBSCRIBED");
+      //     return () => {
+      //       refundInstance.off("BalanceIncreased", addNewEvent);
+      //     };
+      // }
+      // catch (e) {
+      //   console.log(e);
+      // }
     }
   }, [refundInstance]);
 
@@ -131,7 +137,7 @@ export default function RefundView({
       setRefundAddress(addr);
     } catch (error) {
       console.log(error);
-    }  
+    }
   };
 
   const deployRefund = useCallback(async (name, approvers, members) => {
@@ -172,7 +178,7 @@ export default function RefundView({
   };
 
   let refundInfo
-  if (refundAddress) {
+  if (refundAddress && (isMember || isApprover)) {
     refundInfo = (
       <div>
         <h2>{refundName}</h2>
@@ -308,13 +314,14 @@ export default function RefundView({
       {wait ? <Spin/> : (<>
       {!signer && <Redirect to="/"/>}
       <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
-        {refundAddress || showDeployForm?<div style={{float:"right", padding:4, cursor:"pointer", fontSize:28}} onClick={()=>{
+        {(refundAddress && (isMember || isApprover)) || showDeployForm?<div style={{float:"right", padding:4, cursor:"pointer", fontSize:28}} onClick={()=>{
+          setRefundInstance()
           setRefundAddress("")
           setTransactions([])
-          setRefundInstance()
           setNameAlreadyExists(false)
           setShowDeployForm(false)
           setRefundName("")
+          setShowError("")
         }}>
           x
         </div>:""}

@@ -4,7 +4,7 @@ import { utils } from "ethers";
 import { SyncOutlined, CloseSquareOutlined, CloseOutlined } from "@ant-design/icons";
 
 import { Address, Balance, Events, UploadPhoto } from "../components";
-import { addToIPFS, getFromIPFS, urlFromCID } from "../helpers/ipfs";
+import { addToIPFS, retrieveFile } from "../helpers/web3Storage";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -136,30 +136,35 @@ export default function NewRefundRequest({
           />
           <Divider />
           <Button
+            type={"primary"}
             style={{ marginTop: 8 }}
             onClick={async () => {
-              addToIPFS(receiptImages.at(0).originFileObj).then(async (result) => {
-                console.log(result.path);
-                let url = urlFromCID(result.cid);
+              const files = [
+                receiptImages.at(0).originFileObj
+              ]
+              addToIPFS(files).then(async (result) => {
+
+                console.log(result);
+                let url = retrieveFile(result);
                 console.log(url);
-                console.log("*********************isapprover******************");
-                const isApprover = await refundInstance.connect(signer).isApprover();
-                console.log(isApprover);
-                console.log("*********************description******************");
-                console.log(description);
-                console.log("*********************url******************");
-                console.log(url);
-                console.log("*********************address******************");
-                console.log(address);
-                console.log("*********************signer******************");
-                console.log(signer);
-                console.log("*********************refundAmount******************");
-                console.log(refundAmount);
+                // console.log("*********************isapprover******************");
+                // const isApprover = await refundInstance.connect(signer).isApprover();
+                // console.log(isApprover);
+                // console.log("*********************description******************");
+                // console.log(description);
+                // console.log("*********************url******************");
+                // console.log(url);
+                // console.log("*********************address******************");
+                // console.log(address);
+                // console.log("*********************signer******************");
+                // console.log(signer);
+                // console.log("*********************refundAmount******************");
+                // console.log(refundAmount);
                 let date = (new Date()).getTime();
-                console.log("*********************date******************");
-                console.log(date);
-                console.log("*********************category******************");
-                console.log(category);
+                // console.log("*********************date******************");
+                // console.log(date);
+                // console.log("*********************category******************");
+                // console.log(category);
 
 
 
