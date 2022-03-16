@@ -1,5 +1,5 @@
 import { Alert, Input, Button, List, Image, Divider } from "antd";
-import { Address, UploadPhoto } from "../components";
+import { Address, UploadPhoto, Balance } from "../components";
 import { Row, Col, Table, Tag, Space } from 'antd';
 import { AlignCenterOutlined, PlusSquareOutlined, PlusCircleFilled } from "@ant-design/icons";
 import { Popup } from "../components"
@@ -8,9 +8,12 @@ import { useState } from 'react'
 import { useEffect } from "react";
 import { Redirect } from "react-router-dom";
 import { useCallback } from "react";
+import { utils, BigNumber } from "ethers";
 
 
 export default function Requests({
+  localProvider,
+  price,
   address,
   signer,
   refundInstance,
@@ -29,7 +32,7 @@ export default function Requests({
       sorter: {
         compare: (a, b) => a.date - b.date
       },
-      width: '10%',
+      width: '15%',
       align: 'center',
     },
     {
@@ -41,6 +44,7 @@ export default function Requests({
       },
       ellipsis: true,
       align: 'center',
+      width: '25%',
     },
     {
       title: 'Amount',
@@ -49,21 +53,13 @@ export default function Requests({
       sorter: {
         compare: (a, b) => a.amount - b.amount
       },
-      width: '15%',
-      align: 'center',
-    },
-    {
-      title: 'Receipt',
-      dataIndex: 'receipt',
-      key: 'receipt',
-      width: '10%',
+      width: '20%',
       align: 'center',
     },
     {
       title: <div>Category</div>,
       dataIndex: 'category',
       key: 'category',
-      width: '15%',
       filters: [
         {
           text: 'Processing',
@@ -85,13 +81,6 @@ export default function Requests({
       align: 'center',
     },
     {
-      title: 'Comment',
-      dataIndex: 'comment',
-      key: 'comment',
-      width: '15%',
-      align: 'center',
-    },
-    {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
@@ -99,7 +88,6 @@ export default function Requests({
         compare: (a, b) => a.status - b.status
       },
       align: 'center',
-      width: '15%',
       filters: [
         {
           text: 'Processing',
@@ -119,13 +107,42 @@ export default function Requests({
     },
   ];
 
+
+  const inner_columns = [
+    {
+      title: 'Receipt',
+      dataIndex: 'receipt',
+      key: 'receipt',
+      align: 'center',
+      width: '33%'
+    },
+    {
+      title: 'Description',
+      dataIndex: 'comment',
+      key: 'comment',
+      align: 'center',
+      width: '33%'
+    },
+    {
+      title: 'Status change',
+      dataIndex: 'status_change',
+      key: 'status_change',
+      align: 'center',
+      width: '33%',
+      hidden: true
+    },
+
+  ].filter(item => !item.hidden);
+
   function onRequestsChange(reqList) {
     const newRequests = [];
-    reqList.forEach(req => newRequests.push(
+    
+    reqList.forEach(req => {
+      newRequests.push(
       {
         creator_addr:
           <Address address={req.reimbursementAddress} fontSize={16} />,
-        amount: req.amount.toNumber(),
+        amount: <Balance balance={utils.parseEther(req.amount.toString())} provider={localProvider} price={price} size={16}/>,
         status: req.processed ? (req.approved ? "Approved" : "Denied") : "Processing",
         comment: req.description,
         key: req.id,
@@ -133,10 +150,38 @@ export default function Requests({
         date: (new Date(req.date.toNumber())).toLocaleDateString("en-US"),
         category: req.category,
         receipt:
-          <Image width={25} height={25} src={req.url} />
+          <Image width={25} height={25} src={req.url} />,
+        status_change:
+          <>
+            <Button
+              onClick={async () => {
+                try {
+                  let ret = await refundInstance.connect(signer)
+                    .processRequest(req.id, true);
+                  console.log(ret);
+                } catch (error) {
+                  console.log(error);
+                }
+              }}
+            >Approve</Button>
+            &nbsp; &nbsp;
+            <Button
+              onClick={async () => {
+                try {
+                  let ret = await refundInstance.connect(signer)
+                    .processRequest(req.id, false);
+                  console.log(ret);
+                } catch (error) {
+                  console.log(error);
+                }
+              }}
+            >Deny</Button>
+          </>
       }
-    ));
+    )
+    });
     setRequests(newRequests);
+    inner_columns.filter(item => !item.hidden);
   }
 
   const getReqs = async (retry = false) => {
@@ -184,6 +229,7 @@ export default function Requests({
   function previewContent() {
     if (buttonPopup) return (
       <NewRefundRequest
+        price={price}
         address={address}
         refundInstance={refundInstance}
         signer={signer}
@@ -198,6 +244,57 @@ export default function Requests({
             size="midle"
             columns={columns}
             dataSource={requests}
+            expandable={{
+              expandedRowRender: record => (
+                <div style={{ margin: 0 }}>
+                  <Row gutter={[8, 8]}>
+                    <Col span={8} offset={isApprover && record.status === "Processing" ? 0 : 3} style={{ textAlign: "center" }}>
+                      <b>Receipt</b> <br/>
+                      <Image
+                        width={50}
+                        height={50}
+                        src={record.url}
+                      />
+                    </Col>
+                    <Col span={8} style={{ textAlign: "center" }}>
+                      <b>Description</b>
+                      <br/>
+                      <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.comment}</div>
+                    </Col>
+                    {isApprover && record.status === "Processing" &&
+                      <Col span={8} style={{ textAlign: "center" }}>
+                        <b>Process Request</b><br/>
+                        <div style={{ alignSelf: "center" }}>
+                          <Button
+                            onClick={async () => {
+                              try {
+                                let ret = await refundInstance.connect(signer)
+                                  .processRequest(record.key, true);
+                                console.log(ret);
+                              } catch (error) {
+                                console.log(error);
+                              }
+                            }}
+                          >Approve</Button>
+                          &nbsp; &nbsp;
+                          <Button
+                            onClick={async () => {
+                              try {
+                                let ret = await refundInstance.connect(signer)
+                                  .processRequest(record.key, false);
+                                console.log(ret);
+                              } catch (error) {
+                                console.log(error);
+                              }
+                            }}
+                          >Deny</Button>
+                        </div>
+                      </Col>
+                    }
+                  </Row>
+                </div>
+              ),
+            }}
 
           />
           <Button
@@ -220,9 +317,9 @@ export default function Requests({
   }
 
   return (
-    <div style={{ width: 1000, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+    <div style={{ width: 800, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
       <h2>
-        {isApprover ? "" : "My" } Requests &nbsp;
+        {isApprover ? "" : "My"} Requests &nbsp;
         {!buttonPopup && <Button
           icon='+'
           onClick={() => setButtonPopup(!buttonPopup)}

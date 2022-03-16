@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { utils } from "ethers";
 import { SyncOutlined, CloseSquareOutlined, CloseOutlined } from "@ant-design/icons";
 
-import { Address, Balance, Events, UploadPhoto } from "../components";
+import { Address, Balance, Events, UploadPhoto, EtherInput } from "../components";
 import { addToIPFS, getFromIPFS, urlFromCID } from "../helpers/ipfs";
 
 const { TextArea } = Input;
@@ -40,12 +40,12 @@ export default function NewRefundRequest({
     else {
       return (
         <div>
-          <Input
-            style={{ width: 200 }}
+          <EtherInput
+            autofocus
+            price={price}
+            placeholder="Refund amount"
             value={refundAmount}
-            onChange={e => {
-              setRefundAmount(e.target.value);
-            }}
+            onChange={v => {setRefundAmount(v);}}
           />
         </div>)
     }
@@ -114,7 +114,7 @@ export default function NewRefundRequest({
           <Divider />
           <h4>Category</h4>
           <Select
-            style={{ width: 200 }}
+            style={{ width: 348 }}
             onChange={e => {
               setCategory(e);
             }}>

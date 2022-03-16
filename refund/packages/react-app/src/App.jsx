@@ -324,6 +324,8 @@ function App(props) {
         </Route>
         <Route path="/requests">
           <Requests
+            localProvider={localProvider}
+            price={price}
             address={address}
             refundInstance={refundInstance}
             signer={userSigner}
