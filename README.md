@@ -1,4 +1,6 @@
-# REFUND
+# REFUND - to easily track and reimburse all expenses in your DAO
+
+<img src="./refund/screens/requestScreen.png" width="45%"></img> <img src="./refund/screens/homeDarkScreen.png" width="45%"></img> <img src="./refund/screens/homeMemberScreen.png" width="45%"></img> <img src="./refund/screens/requestsLightScreen.png" width="45%"></img> <img src="./refund/screens/requestsOpenScreen.png" width="45%"></img> <img src="./refund/screens/newRequestScreen.png" width="45%"></img> 
 
 ## Project Overview
 A project developed for ETH Denver Virtual Hackathon.  
