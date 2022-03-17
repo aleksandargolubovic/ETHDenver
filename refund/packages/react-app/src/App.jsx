@@ -367,22 +367,33 @@ function App(props) {
         )} */}
       </div>
 
-      {/* 🗺 Extra UI like gas price, eth price, faucet, and support: */}
-      <div style={{ position: "fixed", textAlign: "left", left: 0, bottom: 20, padding: 10 }}>
+      <div style={{ position: "fixed", textAlign: "left", left: 10, bottom: 8 }}>
         <Row align="middle" gutter={[4, 4]}>
-          <Col span={8}>
-            <Ramp price={price} address={address} networks={NETWORKS} />
-          </Col>
-
-          <Col span={8} style={{ textAlign: "center", opacity: 0.8 }}>
-            <GasGauge gasPrice={gasPrice} />
-          </Col>
-          <Col span={8} style={{ textAlign: "center", opacity: 1 }}>
+          <Col>
             <Button
-              onClick={() => {
-                window.open("https://t.me/joinchat/KByvmRe5wkR-8F_zz6AjpA");
-              }}
-              size="large"
+              size="middle"
+              shape="round"
+            >
+              <span style={{ marginRight: 8 }} role="img" aria-label="about">
+                ❔
+              </span>
+              About
+            </Button>
+          </Col>
+          <Col>
+            <Button
+              size="middle"
+              shape="round"
+            >
+              <span style={{ marginRight: 8 }} role="img" aria-label="tearms of use">
+                📄
+              </span>
+              Tearms of use
+            </Button>
+          </Col>
+          <Col>
+            <Button
+              size="middle"
               shape="round"
             >
               <span style={{ marginRight: 8 }} role="img" aria-label="support">
@@ -392,11 +403,10 @@ function App(props) {
             </Button>
           </Col>
         </Row>
-
+{/*
         <Row align="middle" gutter={[4, 4]}>
           <Col span={24}>
             {
-              /*  if the local provider has a signer, let's show the faucet: */  
               faucetAvailable ? (
                 <Faucet localProvider={localProvider} price={price} ensProvider={mainnetProvider} />
               ) : (
@@ -404,7 +414,7 @@ function App(props) {
               )
             }
           </Col>
-        </Row>
+          </Row>*/}
       </div>
     </div>
   );

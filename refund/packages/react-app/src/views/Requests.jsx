@@ -1,8 +1,7 @@
 import { Alert, Input, Button, List, Image, Divider, Card } from "antd";
-import { Address, UploadPhoto, Balance } from "../components";
+import { Address, Balance } from "../components";
 import { Row, Col, Table, Tag, Space } from 'antd';
-import { AlignCenterOutlined, PlusSquareOutlined, PlusCircleFilled } from "@ant-design/icons";
-import { Popup } from "../components"
+import { CheckCircleOutlined, SyncOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { NewRefundRequest } from "./index.js"
 import { useState } from 'react'
 import { useEffect } from "react";
@@ -62,7 +61,7 @@ export default function Requests({
       align: 'center',
     },
     {
-      title: <div>Category</div>,
+      title: <div style={{ paddingLeft: 5 }}>Category</div>,
       dataIndex: 'category',
       key: 'category',
       filters: [
@@ -98,8 +97,8 @@ export default function Requests({
       align: 'center',
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
+      title: <div style={{ paddingLeft: 22 }}>Status</div>,
+      dataIndex: 'display_status',
       key: 'status',
       sorter: {
         compare: (a, b) => a.status - b.status
@@ -134,6 +133,11 @@ export default function Requests({
             <Address address={req.reimbursementAddress} fontSize={16} />,
           amount: <Balance balance={req.amount} provider={localProvider} price={price} size={16} />,
           status: req.processed ? (req.approved ? APPROVED : DENIED) : PROCESSING,
+          display_status: req.processed ?
+            (req.approved ?
+              <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag> :
+              <Tag icon={<CloseCircleOutlined />} color="error">Denied</Tag>) :
+            <Tag icon={<SyncOutlined spin />} color="processing">Processing</Tag>,
           comment: req.description,
           key: req.id,
           url: req.url,
@@ -213,7 +217,7 @@ export default function Requests({
               expandedRowRender: record => (
                 <div style={{ margin: 0 }}>
                   <Row gutter={[8, 8]}>
-                    <Col span={6} offset={isApprover && record.status === PROCESSING ? 0 : 3} style={{ textAlign: "center" }}>
+                    <Col span={5} offset={isApprover && record.status === PROCESSING ? 0 : 4} style={{ textAlign: "center" }}>
                       <Card title="Receipt" bordered={false} size="small">
                         <Image
                           width={50}
@@ -226,13 +230,14 @@ export default function Requests({
                       <Card title="Description" bordered={false} size="small">
                         <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.comment}</div>
                       </Card>
-                    </Col>
+                    </Col>                              
                     {isApprover && record.status === PROCESSING &&
-                      <Col span={6} style={{ textAlign: "center" }}>
-                        <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height:"100%" }}> 
-                          <div style={{ alignItems: "center" }}>
+                      <Col span={7} style={{ textAlign: "center" }}>
+                        <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height: "100%" }}>
+                          <div style={{ alignItems: "center", paddingTop: 14 }}>
                             <Button
                               loading={approveButtonLoading}
+                              style={{ width: "45%" }}
                               onClick={async () => {
                                 try {
                                   setApproveButtonLoading(true);
@@ -245,10 +250,13 @@ export default function Requests({
                                 }
                                 setApproveButtonLoading(false);
                               }}
-                            >Approve</Button>
+                            >
+                              Approve
+                            </Button>
                             &nbsp; &nbsp;
                             <Button
                               loading={denyButtonLoading}
+                              style={{ width: "45%" }}
                               onClick={async () => {
                                 setDenyButtonLoading(true);
                                 try {
@@ -261,7 +269,9 @@ export default function Requests({
                                 }
                                 setDenyButtonLoading(false);
                               }}
-                            >Deny</Button>
+                            >
+                              Deny
+                            </Button>
                           </div>
                         </Card>
                       </Col>
@@ -270,11 +280,9 @@ export default function Requests({
                 </div>
               ),
             }}
-
           />
           <Button
             onClick={async () => {
-              console.log("***********Refresh*************");
               let done = isApprover ?
                 await refundInstance.getRequests() :
                 await refundInstance.connect(signer).getMembersRequests();

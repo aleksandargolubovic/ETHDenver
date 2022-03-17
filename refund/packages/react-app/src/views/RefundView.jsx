@@ -9,6 +9,7 @@ import { useBalance } from "eth-hooks";
 import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
 import { Redirect } from "react-router-dom";
+import { CloseOutlined } from "@ant-design/icons";
 
 
 export default function RefundView({
@@ -207,18 +208,18 @@ export default function RefundView({
         <h2>{refundName}</h2>
         <Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
         <Balance value={refundBalance} price={price} />
-        <Divider/>
-        <div style={{padding:8}}>
-        <Row gutter={16}>
-          <Col span={12}>
-            <Statistic title="User Role" value={isApprover ? "Approver" : isMember ? "Member" : ""}/>
-          </Col>
-          <Col span={12}>
-            <Statistic title="Total Requests" value={numOfRequests}/>
-          </Col>
-        </Row>
+        <Divider />
+        <div style={{ padding: 8 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Statistic title="User Role" value={isApprover ? "Approver" : isMember ? "Member" : ""} />
+            </Col>
+            <Col span={12}>
+              <Statistic title="Total Requests" value={numOfRequests} />
+            </Col>
+          </Row>
         </div>
-        <Divider/>
+        <Divider />
         <h3>Send funds to this organization:</h3>
         <div style={{ padding: 4 }}>
           <EtherInput
@@ -226,41 +227,41 @@ export default function RefundView({
             price={price}
             placeholder="Enter Tx Value"
             value={value}
-            onChange={v => {setValue(v);}}
+            onChange={v => { setValue(v); }}
           />
         </div>
         <Button
-            style={{ marginTop: 8 }}
-            loading={sendingFunds}
-            type={"primary"}
-            onClick={async () => {
-              let amount;
-              try {
-                amount = ethers.utils.parseEther("" + value);
-              } catch (e) {
-                // failed to parseEther, try something else
-                amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
-              }
-              const tx = signer.sendTransaction({
-                to: refundAddress,
-                value: amount
-              });
-            }}
-          >
+          style={{ marginTop: 8 }}
+          loading={sendingFunds}
+          type={"primary"}
+          onClick={async () => {
+            let amount;
+            try {
+              amount = ethers.utils.parseEther("" + value);
+            } catch (e) {
+              // failed to parseEther, try something else
+              amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
+            }
+            const tx = signer.sendTransaction({
+              to: refundAddress,
+              value: amount
+            });
+          }}
+        >
           <SendOutlined /> Send funds
         </Button>
       </div>
     )
   } else if (!showDeployForm) {
     refundInfo = (
-      <div style={{padding:32}}>
+      <div style={{ padding: 32 }}>
         <Button onClick={() => createNewRefund(true)} type={"primary"} >
           CREATE A NEW REFUND ORG
         </Button>
-        <Divider/>
+        <Divider />
         <div> or enter existing organization name: </div>
         <Input.Group compact>
-          <Input placeholder="Organization name" 
+          <Input placeholder="Organization name"
             style={{ width: 'calc(100% - 100px)' }}
             onChange={async (e) => {
               setShowError('');
@@ -276,7 +277,7 @@ export default function RefundView({
           </Button>
         </Input.Group>
         <div>
-          {showError !== '' && <label style={{color: 'crimson'}}>{showError}</label>}
+          {showError !== '' && <label style={{ color: 'crimson' }}>{showError}</label>}
         </div>
       </div>
     )
@@ -285,14 +286,14 @@ export default function RefundView({
   }
 
   let deployForm
-  if(!showDeployForm){
+  if (!showDeployForm) {
     deployForm = ""
   } else {
     deployForm = (
       <>
         <h3>Create a new Refund Organization</h3>
 
-        <div style={{ margin: 8}}>
+        <div style={{ margin: 8 }}>
           <div style={{ padding: 4 }}>
             <Input placeholder="Organization name"
               onChange={async (e) => {
@@ -305,12 +306,12 @@ export default function RefundView({
           <Divider />
           <div style={{ padding: 4 }}>
             Approvers
-            <EditableTagGroup key="approvers" setAddresses={setApprovers}/>
+            <EditableTagGroup key="approvers" setAddresses={setApprovers} />
           </div>
           <Divider />
           <div style={{ padding: 4 }}>
             Members
-            <EditableTagGroup key="members" setAddresses={setMembers}/>
+            <EditableTagGroup key="members" setAddresses={setMembers} />
           </div>
           <Divider />
           <Button
@@ -330,30 +331,36 @@ export default function RefundView({
       </>
     )
   }
-
+  
   return (
     <div>
-      {wait ? <Spin/> : (<>
-      {!signer && <Redirect to="/"/>}
-      <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
-        {(refundAddress && (isMember || isApprover)) || showDeployForm?<div style={{float:"right", padding:4, cursor:"pointer", fontSize:28}} onClick={()=>{
-          setRefundInstance()
-          setRefundAddress("")
-          setNameAlreadyExists(false)
-          setShowDeployForm(false)
-          setRefundName("")
-          setShowError("")
-        }}>
-          x
-        </div>:""}
-        <div style={{padding:4}}>
-          {refundInfo}
+      {wait ? <Spin /> : (<>
+        {!signer && <Redirect to="/" />}
+        <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto", marginTop: 32, marginBottom: 32 }}>
+          {refundAddress || showDeployForm ? <Row style={{ paddingTop: 0, width: 372, margin: "auto" }}>
+            <Col span={1} offset={23}>
+              <Button
+                icon={<CloseOutlined />}
+                size="small"
+                type="text"
+                onClick={() => {
+                  setRefundAddress("")
+                  setRefundInstance()
+                  setNameAlreadyExists(false)
+                  setShowDeployForm(false)
+                  setRefundName("")
+                }}
+              />
+            </Col>
+          </Row> : ""}
+          <div style={{ padding: 4 }}>
+            {refundInfo}
+          </div>
+
+          {deployForm}
+
         </div>
-
-        {deployForm}
-
-      </div>
-      <Divider />
+        <Divider />
       </>)}
     </div>
   );

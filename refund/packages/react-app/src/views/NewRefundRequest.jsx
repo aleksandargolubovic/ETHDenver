@@ -1,16 +1,11 @@
-import { Select, Row, Col, Button, Divider, Input, message, Slider, Spin, Switch } from "antd";
-import React, { useState, useEffect } from "react";
-import { utils } from "ethers";
-import { SyncOutlined, CloseSquareOutlined, CloseOutlined } from "@ant-design/icons";
-import { ethers } from "ethers";
+import { Select, Row, Col, Button, Divider, Input, Spin } from "antd";
+import React, { useCallback, useState, useEffect } from "react";
+import { ethers, utils } from "ethers";
+import { CloseOutlined } from "@ant-design/icons";
 
-//import { Address, Balance, Events, UploadPhoto } from "../components";
+import { UploadPhoto, RefundAmountInput } from "../components";
 import { addToIPFS, retrieveFile } from "../helpers/web3Storage";
-
-import { Address, Balance, Events, UploadPhoto, EtherInput } from "../components";
-import { useCallback } from "react";
 //import { addToIPFS, getFromIPFS, urlFromCID } from "../helpers/ipfs";
-
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -18,15 +13,8 @@ const { Option } = Select;
 const Tesseract = require('tesseract.js');
 
 export default function NewRefundRequest({
-  purpose,
   address,
-  mainnetProvider,
-  localProvider,
-  yourLocalBalance,
   price,
-  tx,
-  readContracts,
-  writeContracts,
   trigger,
   signer,
   refundInstance,
@@ -37,8 +25,8 @@ export default function NewRefundRequest({
   const [refundAmount, setRefundAmount] = useState("0");
   const [recognitionState, setRecognitionState] = useState("idle");
   const [buttonLoading, setButtonLoading] = useState(false);
-  //const [statusUpload, setStatusUpload] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [display, setDisplay] = useState();
 
   function previewRefundAmount() {
     console.log(recognitionState);
@@ -49,17 +37,17 @@ export default function NewRefundRequest({
     else {
       return (
         <div>
-          <EtherInput
+          <RefundAmountInput
             autofocus
             price={price}
             placeholder="Refund amount"
             value={refundAmount}
             onChange={v => {
               setErrorMessage('');
-              //console.log(refundAmount*10e18);
-              console.log(refundAmount);
               setRefundAmount(v);
             }}
+            display={display}
+            setDisplay={setDisplay}
           />
         </div>)
     }
@@ -94,6 +82,7 @@ export default function NewRefundRequest({
       console.log(amount);
       const ethValue = amount / price;
       setRefundAmount(ethValue);
+      setDisplay(amount);
       setRecognitionState("idle");
     })
 
@@ -144,7 +133,6 @@ export default function NewRefundRequest({
       console.log(err);
       setButtonLoading(false);
     });
-    //setButtonLoading(false);
   });
 
   return (
@@ -152,9 +140,7 @@ export default function NewRefundRequest({
       <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto" }}>
 
         <Row style={{ paddingTop: 0, width: 372, margin: "auto" }}>
-          <Col span={23}>
-          </Col>
-          <Col span={1}>
+          <Col span={1} offset={23}>
             <Button
               icon={<CloseOutlined />}
               size="small"
@@ -178,7 +164,7 @@ export default function NewRefundRequest({
           <h4>Category</h4>
           <Select
             placeholder={"Category"}
-            style={{ width: 348, textAlign:"left"}}
+            style={{ width: 348, textAlign: "left" }}
             onChange={e => {
               setErrorMessage('');
               setCategory(e);
