@@ -123,9 +123,8 @@ export default function Requests({
   ];
 
   function onRequestsChange(reqList) {
-    const newRequests = [];
-
-    reqList.forEach(req => {
+   const newRequests = [];
+   reqList.forEach(req => {
       newRequests.push(
         {
           creator_addr:
@@ -150,7 +149,7 @@ export default function Requests({
     setRequests(newRequests);
   }
 
-  const getReqs = async (retry = false) => {
+  const getReqs = async (retry = 0) => {
     if (refundInstance) {
       const ret = isApprover ?
         await refundInstance.getRequests() :
@@ -159,12 +158,12 @@ export default function Requests({
       console.log("Ret.len ", ret.length, ", requests.len", requests.length);
       onRequestsChange(ret);
 
-      if (retry && (ret.length === requests.length || requests.length === 0)) {
+      if (retry !== 0 && retry < 10 && (ret.length === requests.length || requests.length === 0)) {
         console.log("Ret.len ", ret.length, ", requests.len", requests.length);
         console.log("Retry again");
         setTimeout(() => {
-          getReqs();
-        }, 50);
+          getReqs(retry + 1);
+        }, 400);
       }
     }
   }
@@ -173,7 +172,7 @@ export default function Requests({
     if (listenerArgs != null && listenerArgs.length > 0) {
       const newEvent = listenerArgs[listenerArgs.length - 1];
       if (newEvent.event != null && newEvent.logIndex != null && newEvent.transactionHash != null) {
-        getReqs(true);
+        getReqs(1);
       }
     }
   }, []);
