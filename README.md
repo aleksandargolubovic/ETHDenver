@@ -5,7 +5,6 @@ A project developed for ETH Denver Virtual Hackathon. It gives an opportunity to
 
 ## Technologies
 * React
-* Node.js
 * Solidity
 
 ## Project developed with
