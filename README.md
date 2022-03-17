@@ -1,7 +1,17 @@
-# ETHDenver
+# REFUND
 
 ## Project Overview
-A project developed for ETH Denver Virtual Hackathon. It gives an opportunity to easily track and reimburse all expenses in your DAO.
+A project developed for ETH Denver Virtual Hackathon.
+Refund is a web3 app which makes easier to track and reimburse all the expenses in your DAO.
+Refund is an expense management system for DAOs (Decentralized Autonomous Organizations). The app tracks and files expenses such as fuel, travel, and meals.
+Once users photograph receipts, the photos are uploaded and stored on a distributed storage using IPFS and Web3.Storage. 
+Artificial intelligence identifies the amount of the transaction, then user categorizes and saves the expense.
+It also allows users to upload receipts from online purchases that can be submitted for reimbursement.
+Refund allows users to see all expense reports based on user transactions.
+On organization creation, a user roles have to be assigned. 
+Inside Refund, a member of a DAO can be registered either as an **Approver**, which gives the power to approve or deny expenses,
+or a **Member** role, which represents a regular member who can create a new reimbursement requests.
+
 
 ## Technologies
 * React
@@ -42,3 +52,7 @@ A project developed for ETH Denver Virtual Hackathon. It gives an opportunity to
 - github@dzoni-hash, software developer
 
 ## Future work/TODO
+* Implement mobile version of the app
+* Improve receipts images recognition
+* Enhance the UI and UX
+* Add new options
