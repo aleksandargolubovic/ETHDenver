@@ -3,16 +3,16 @@ import { SendOutlined } from "@ant-design/icons";
 import { useContractExistsAtAddress, useContractLoader } from "eth-hooks";
 import React, { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
-import { Address, Balance, EtherInput, AddressInput } from "../components";
-import { usePoller, useLocalStorage, useSafeSdk } from "../hooks";
+import { Address, Balance, EtherInput } from "../components";
+import { useLocalStorage } from "../hooks";
 import { useBalance } from "eth-hooks";
 import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
-import { Transactor } from "../helpers";
 import { Redirect } from "react-router-dom";
 
 
 export default function RefundView({
+  address,
   mainnetProvider,
   localProvider,
   price,
@@ -37,7 +37,7 @@ export default function RefundView({
   const [refundName, setRefundName] = useLocalStorage("refundName");
   const [name, setName] = useState('');
   const [value, setValue] = useState();
-  const [transactions, setTransactions] = useState([]);
+  //const [transactions, setTransactions] = useState([]);
   const [nameAlreadyExists, setNameAlreadyExists] = useState(false);
   const [showError, setShowError] = useState('');
   const [wait, setWait] = useState(false);
@@ -55,7 +55,8 @@ export default function RefundView({
   const [deploying, setDeploying] = useState();
   const [sendingFunds, setSendingFunds] = useState();
   const [showRefundInfo, setShowRefundInfo] = useState();
-  const [numOfRequests, setNumOfRequests] = useState('');
+  const [numOfRequests, setNumOfRequests] = useState(0);
+  const [updateNumReqs, setUpdateNumReqs] = useState(false);
   
   const refundBalance = useBalance(localProvider, refundAddress);
 
@@ -64,9 +65,16 @@ export default function RefundView({
       const newEvent = listenerArgs[listenerArgs.length - 1];
       if (newEvent.event != null && newEvent.logIndex != null && newEvent.transactionHash != null) {
         console.log("NEW EVENT: ", newEvent);
+        let fullDescription = '';
+        if (newEvent.event == "NewRequestCreated") {
+          setUpdateNumReqs(!updateNumReqs);
+          fullDescription = "Amount: " + newEvent.args.amount + "\n Created by: " + newEvent.args.member;
+        } else {
+          fullDescription = "Amount: " + newEvent.args.amount + "\n Approved by: " + newEvent.args.approver;
+        }
         notification.info({
           message: newEvent.event,
-          description: "amount: " + newEvent.args.amount + ", sender: " + newEvent.args.fromAddress,
+          description: fullDescription,
           placement: "bottomRight",
         });
       }
@@ -74,7 +82,18 @@ export default function RefundView({
   }, []);
 
   useEffect(() => {
+    const getReqNumber = async () => {
+      if (refundInstance) {
+        const numOfRequests = await refundInstance.numOfRequests();
+        setNumOfRequests(numOfRequests);
+      }
+    }
+    getReqNumber();
+  }, [updateNumReqs])
+
+  useEffect(() => {
     if (refundInstance) {
+      let filter;
       console.log("Refund Instance still alive: ", refundInstance);
       const init = async () => {
         try {
@@ -85,11 +104,20 @@ export default function RefundView({
           setWait(false);
           setIsApprover(retIsApprover);
           setIsMember(retIsMember);
-          setNumOfRequests(numOfRequests.toString());
+          setNumOfRequests(numOfRequests);
           if (!retIsApprover && !retIsMember) {
             setShowError("You are not part of this organization!");
             return;
           }
+          if (retIsMember) {
+            filter = refundInstance.filters.PaymentTransfered(null, address);
+          } else if (retIsApprover) {
+            filter = refundInstance.filters.NewRequestCreated();
+          }
+
+          refundInstance.on(filter, addNewEvent);
+          console.log("SUBSCRIBED");
+            
         } catch (error) {
           console.log(error);
           setTimeout(() => {
@@ -99,16 +127,11 @@ export default function RefundView({
         }
       }
       init();
-      // try {
-      //   refundInstance.on("BalanceIncreased", addNewEvent);
-      //   console.log("SUBSCRIBED");
-      //     return () => {
-      //       refundInstance.off("BalanceIncreased", addNewEvent);
-      //     };
-      // }
-      // catch (e) {
-      //   console.log(e);
-      // }
+
+      return () => {
+        console.log("removed subscribed")
+        refundInstance.removeAllListeners();
+      };
     }
   }, [refundInstance]);
 
@@ -218,7 +241,6 @@ export default function RefundView({
                 // failed to parseEther, try something else
                 amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
               }
-              //tx({to: refundAddress, value: amount });
               const tx = signer.sendTransaction({
                 to: refundAddress,
                 value: amount
@@ -247,7 +269,7 @@ export default function RefundView({
             }}
           />
           <Button type="primary" onClick={() => {
-            setRefundName();
+            setRefundName('');
             setRefundName(name);
           }}
           >Enter
@@ -317,7 +339,6 @@ export default function RefundView({
         {(refundAddress && (isMember || isApprover)) || showDeployForm?<div style={{float:"right", padding:4, cursor:"pointer", fontSize:28}} onClick={()=>{
           setRefundInstance()
           setRefundAddress("")
-          setTransactions([])
           setNameAlreadyExists(false)
           setShowDeployForm(false)
           setRefundName("")

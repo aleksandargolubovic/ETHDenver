@@ -54,6 +54,7 @@ const { ethers } = require("ethers");
 */
 
 /// 📡 What chain are your contracts deployed to?
+
 const initialNetwork = NETWORKS.localhost//testnetMetis;// <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
@@ -287,7 +288,7 @@ function App(props) {
       <Menu 
         style={{ textAlign: "center", marginTop: 40 }} 
         selectedKeys={[location.pathname]} mode="horizontal">
-        <Menu.Item key="/">
+        <Menu.Item key="/home">
           <Link to="/home">Home</Link>
         </Menu.Item>
         {refundInstance && 
@@ -324,6 +325,8 @@ function App(props) {
         </Route>
         <Route path="/requests">
           <Requests
+            localProvider={localProvider}
+            price={price}
             address={address}
             refundInstance={refundInstance}
             signer={userSigner}

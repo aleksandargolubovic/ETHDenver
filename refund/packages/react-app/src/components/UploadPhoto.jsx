@@ -32,6 +32,7 @@ export default function UploadPhoto(props) {
       action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
       listType="picture-card"
       fileList={props.fileList}
+      status={'error'}
       onChange={onChange}
       onPreview={onPreview}
     >

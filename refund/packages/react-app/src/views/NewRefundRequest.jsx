@@ -1,10 +1,16 @@
-import { Select, Row, Col, Button, Card, DatePicker, Divider, Input, Progress, Slider, Spin, Switch } from "antd";
+import { Select, Row, Col, Button, Divider, Input, message, Slider, Spin, Switch } from "antd";
 import React, { useState, useEffect } from "react";
 import { utils } from "ethers";
 import { SyncOutlined, CloseSquareOutlined, CloseOutlined } from "@ant-design/icons";
+import { ethers } from "ethers";
 
-import { Address, Balance, Events, UploadPhoto } from "../components";
+//import { Address, Balance, Events, UploadPhoto } from "../components";
 import { addToIPFS, retrieveFile } from "../helpers/web3Storage";
+
+import { Address, Balance, Events, UploadPhoto, EtherInput } from "../components";
+import { useCallback } from "react";
+//import { addToIPFS, getFromIPFS, urlFromCID } from "../helpers/ipfs";
+
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -30,6 +36,9 @@ export default function NewRefundRequest({
   const [receiptImages, setReceiptImages] = useState([]);
   const [refundAmount, setRefundAmount] = useState("0");
   const [recognitionState, setRecognitionState] = useState("idle");
+  const [buttonLoading, setButtonLoading] = useState(false);
+  //const [statusUpload, setStatusUpload] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   function previewRefundAmount() {
     console.log(recognitionState);
@@ -40,11 +49,16 @@ export default function NewRefundRequest({
     else {
       return (
         <div>
-          <Input
-            style={{ width: 200 }}
+          <EtherInput
+            autofocus
+            price={price}
+            placeholder="Refund amount"
             value={refundAmount}
-            onChange={e => {
-              setRefundAmount(e.target.value);
+            onChange={v => {
+              setErrorMessage('');
+              //console.log(refundAmount*10e18);
+              console.log(refundAmount);
+              setRefundAmount(v);
             }}
           />
         </div>)
@@ -52,10 +66,11 @@ export default function NewRefundRequest({
   }
 
   useEffect(async () => {
-    console.log("***************receiptImages************************");
+    setErrorMessage('');
     console.log(receiptImages);
-    if (receiptImages.length < 1) return;
-    const newImageUrls = [];
+    if (receiptImages.length < 1) {
+      return;
+    }
     console.log(receiptImages.at(0).url);
     let src = receiptImages.at(0).url;
     if (!src) {
@@ -65,7 +80,6 @@ export default function NewRefundRequest({
         reader.onload = () => resolve(reader.result);
       });
     }
-
 
     setRecognitionState("inProgress");
 
@@ -78,11 +92,60 @@ export default function NewRefundRequest({
       let totalPosition = text.indexOf("Total") + 6;
       let amount = text.substring(totalPosition, text.indexOf("\n", totalPosition));
       console.log(amount);
-      setRefundAmount(amount);
+      const ethValue = amount / price;
+      setRefundAmount(ethValue);
       setRecognitionState("idle");
     })
 
   }, [receiptImages]);
+
+  const createNewRequest = useCallback(async () => {
+    if (receiptImages.length < 1) {
+      setErrorMessage("Receipt image is missing");
+      console.log("Image missing");
+      return;
+    }
+
+    setButtonLoading(true);
+    const files = [
+      receiptImages.at(0).originFileObj
+    ]
+    addToIPFS(files).then(async (result) => {
+      console.log(result);
+      let url = retrieveFile(result);
+      console.log(url);
+      let date = (new Date()).getTime();
+      let amount;
+
+      try {
+        amount = ethers.utils.parseEther("" + refundAmount);
+      } catch (e) {
+        // failed to parseEther, try something else
+        amount = ethers.utils.parseEther("" + parseFloat(refundAmount).toFixed(8));
+      }
+      try {
+        let done = await refundInstance.connect(signer).createRequest(
+          description,
+          url,
+          address,
+          amount,
+          date,
+          category
+        );
+        trigger(false);
+      }
+      catch (error) {
+        console.error(error);
+        setErrorMessage("Transaction failed");
+      }
+      setButtonLoading(false);
+      
+    }, function (err) {
+      console.log(err);
+      setButtonLoading(false);
+    });
+    //setButtonLoading(false);
+  });
 
   return (
     <div>
@@ -114,82 +177,45 @@ export default function NewRefundRequest({
           <Divider />
           <h4>Category</h4>
           <Select
-            style={{ width: 200 }}
+            placeholder={"Category"}
+            style={{ width: 348, textAlign:"left"}}
             onChange={e => {
+              setErrorMessage('');
               setCategory(e);
             }}>
             <Option value="Equipment">Equipment</Option>
             <Option value="Home Office">Home Office</Option>
             <Option value="Meals and Entertainment">Meals and Entertainment</Option>
             <Option value="Office Supplies">Office Supplies</Option>
-            <Option value="Other">Other</Option>
             <Option value="Travel">Travel</Option>
+            <Option value="Other">Other</Option>
           </Select>
 
           <Divider />
-          <h4>Comment</h4>
+          <h4>Description</h4>
           <TextArea
             autoSize={{ minRows: 2, maxRows: 3 }}
             onChange={e => {
+              setErrorMessage('');
               setDescription(e.target.value);
             }}
+            placeholder={"Description"}
           />
           <Divider />
           <Button
             type={"primary"}
+            loading={buttonLoading}
             style={{ marginTop: 8 }}
             onClick={async () => {
-              const files = [
-                receiptImages.at(0).originFileObj
-              ]
-              addToIPFS(files).then(async (result) => {
-
-                console.log(result);
-                let url = retrieveFile(result);
-                console.log(url);
-                // console.log("*********************isapprover******************");
-                // const isApprover = await refundInstance.connect(signer).isApprover();
-                // console.log(isApprover);
-                // console.log("*********************description******************");
-                // console.log(description);
-                // console.log("*********************url******************");
-                // console.log(url);
-                // console.log("*********************address******************");
-                // console.log(address);
-                // console.log("*********************signer******************");
-                // console.log(signer);
-                // console.log("*********************refundAmount******************");
-                // console.log(refundAmount);
-                let date = (new Date()).getTime();
-                // console.log("*********************date******************");
-                // console.log(date);
-                // console.log("*********************category******************");
-                // console.log(category);
-
-
-
-                try {
-                  let done = await refundInstance.connect(signer).createRequest(
-                    description,
-                    url,
-                    address,
-                    refundAmount,
-                    date,
-                    category
-                  );
-                }
-                catch (error) {
-                  console.error(error);
-                }
-                trigger(false);
-
-              }, function (err) {
-                console.log(err);
-              });
+              setErrorMessage('');
+              createNewRequest();
             }}
           >
             Send Request!
           </Button>
+          <div>
+          {errorMessage !== '' && <label style={{color: 'crimson'}}>{errorMessage}</label>}
+          </div>
         </div>
       </div>
     </div>
