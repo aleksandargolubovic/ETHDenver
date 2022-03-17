@@ -56,7 +56,7 @@ export default function Requests({
       align: 'center',
     },
     {
-      title: <div>Category</div>,
+      title: <div style={{ paddingLeft: 5 }}>Category</div>,
       dataIndex: 'category',
       key: 'category',
       filters: [
@@ -92,7 +92,7 @@ export default function Requests({
       align: 'center',
     },
     {
-      title: 'Status',
+      title: <div style={{ paddingLeft: 22 }}>Status</div>,
       dataIndex: 'display_status',
       key: 'status',
       sorter: {
@@ -227,9 +227,9 @@ export default function Requests({
                     {isApprover && record.status === "Processing" &&
                       <Col span={7} style={{ textAlign: "center" }}>
                         <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height: "100%" }}>
-                          <div style={{ alignItems: "center" }}>
+                          <div style={{ alignItems: "center", paddingTop: 14 }}>
                             <Button
-                              style={{ borderColor: "green", color: "green", width: "45%" }}
+                              style={{ width: "45%" }}
                               onClick={async () => {
                                 try {
                                   let ret = await refundInstance.connect(signer)
@@ -239,10 +239,12 @@ export default function Requests({
                                   console.log(error);
                                 }
                               }}
-                            >Approve</Button>
+                            >
+                              Approve
+                            </Button>
                             &nbsp; &nbsp;
                             <Button
-                              style={{ borderColor: "red", color: "red", width: "45%" }}
+                              style={{ width: "45%" }}
                               onClick={async () => {
                                 try {
                                   let ret = await refundInstance.connect(signer)
@@ -252,7 +254,9 @@ export default function Requests({
                                   console.log(error);
                                 }
                               }}
-                            ><div>Deny</div></Button>
+                            >
+                              Deny
+                            </Button>
                           </div>
                         </Card>
                       </Col>
