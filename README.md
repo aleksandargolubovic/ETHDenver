@@ -7,6 +7,7 @@ Refund is an expense management system for DAOs (Decentralized Autonomous Organi
 Once users photograph receipts, the photos are uploaded and stored on a distributed storage using IPFS and Web3.Storage.  
 Artificial intelligence identifies the amount of the transaction, then user categorizes and saves the expense.  
 It also allows users to upload receipts from online purchases that can be submitted for reimbursement.  
+Once approved, the amount of the reimbursement request gets automatically sent from DAO's wallet to the user who created the request.  
 Refund allows users to see all expense reports based on user transactions.  
 On organization creation, a user roles have to be assigned.  
 Inside Refund, a member of a DAO can be registered either as an **Approver**, which gives the power to approve or deny expenses,  
