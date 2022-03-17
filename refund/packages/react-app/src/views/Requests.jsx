@@ -1,13 +1,12 @@
-import { Alert, Input, Button, List, Image, Divider, Card } from "antd";
+import { Button, Image, Card } from "antd";
 import { Address, Balance } from "../components";
-import { Row, Col, Table, Tag, Space } from 'antd';
+import { Row, Col, Table, Tag } from 'antd';
 import { CheckCircleOutlined, SyncOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { NewRefundRequest } from "./index.js"
 import { useState } from 'react'
 import { useEffect } from "react";
 import { Redirect } from "react-router-dom";
 import { useCallback } from "react";
-import { utils, BigNumber } from "ethers";
 
 
 export default function Requests({
@@ -137,7 +136,7 @@ export default function Requests({
             (req.approved ?
               <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag> :
               <Tag icon={<CloseCircleOutlined />} color="error">Denied</Tag>) :
-            <Tag icon={<SyncOutlined spin />} color="processing">Processing</Tag>,
+            <Tag icon={<SyncOutlined  />} color="processing">Processing</Tag>,
           comment: req.description,
           key: req.id,
           url: req.url,
@@ -157,12 +156,14 @@ export default function Requests({
         await refundInstance.getRequests() :
         await refundInstance.connect(signer).getMembersRequests();
       console.log(ret);
+      console.log("Ret.len ", ret.length, ", requests.len", requests.length);
       onRequestsChange(ret);
 
       if (retry && (ret.length === requests.length || requests.length === 0)) {
+        console.log("Ret.len ", ret.length, ", requests.len", requests.length);
         console.log("Retry again");
         setTimeout(() => {
-          getReqs(true);
+          getReqs();
         }, 50);
       }
     }
@@ -210,7 +211,7 @@ export default function Requests({
         <div>
           {!signer && <Redirect to="/" />}
           <Table
-            size="midle"
+            size="middle"
             columns={columns}
             dataSource={requests}
             expandable={{
@@ -245,6 +246,7 @@ export default function Requests({
                                     .processRequest(record.key, true);
                                   console.log(ret);
                                   record.status = APPROVED;
+                                  record.display_status = <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag>;
                                 } catch (error) {
                                   console.log(error);
                                 }
@@ -264,6 +266,7 @@ export default function Requests({
                                     .processRequest(record.key, false);
                                   console.log(ret);
                                   record.status = DENIED;
+                                  record.display_status = <Tag icon={<CloseCircleOutlined />} color="error">Denied</Tag>;
                                 } catch (error) {
                                   console.log(error);
                                 }
@@ -300,7 +303,7 @@ export default function Requests({
   }
 
   return (
-    <div style={{ width: 800, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+    <div style={{ width: 820, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
       <h2>
         {isApprover ? "" : "My"} Requests &nbsp;
         {!buttonPopup && <Button

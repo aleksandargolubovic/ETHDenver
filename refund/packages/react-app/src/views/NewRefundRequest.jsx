@@ -121,13 +121,14 @@ export default function NewRefundRequest({
           date,
           category
         );
+        setButtonLoading(false);
         trigger(false);
       }
       catch (error) {
         console.error(error);
+        setButtonLoading(false);
         setErrorMessage("Transaction failed");
       }
-      setButtonLoading(false);
       
     }, function (err) {
       console.log(err);

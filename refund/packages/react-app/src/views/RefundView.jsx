@@ -67,11 +67,12 @@ export default function RefundView({
       if (newEvent.event != null && newEvent.logIndex != null && newEvent.transactionHash != null) {
         console.log("NEW EVENT: ", newEvent);
         let fullDescription = '';
+        const descAmount = ethers.utils.formatEther(newEvent.args.amount);
         if (newEvent.event == "NewRequestCreated") {
           setUpdateNumReqs(!updateNumReqs);
-          fullDescription = "Amount: " + newEvent.args.amount + "\n Created by: " + newEvent.args.member;
+          fullDescription = "Amount: " + descAmount + "\n Created by: " + newEvent.args.member;
         } else {
-          fullDescription = "Amount: " + newEvent.args.amount + "\n Approved by: " + newEvent.args.approver;
+          fullDescription = "Amount: " + descAmount + "\n Approved by: " + newEvent.args.approver;
         }
         notification.info({
           message: newEvent.event,
