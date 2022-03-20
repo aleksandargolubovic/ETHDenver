@@ -8,7 +8,7 @@ import {
   useOnBlock,
   useUserProviderAndSigner,
 } from "eth-hooks";
-import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
+import { useExchangeMetisPrice } from "./hooks";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, Route, Switch, useLocation, Redirect } from "react-router-dom";
 import "./App.css";
@@ -55,7 +55,7 @@ const { ethers } = require("ethers");
 
 /// 📡 What chain are your contracts deployed to?
 
-const initialNetwork = NETWORKS.localhost//testnetMetis;// <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.testnetMetis;// <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -108,8 +108,10 @@ function App(props) {
     }, 1);
   };
 
-  /* 💵 This hook will get the price of ETH from 🦄 Uniswap: */
-  const price = useExchangeEthPrice(targetNetwork, mainnetProvider);
+  /* 💵 This hook will get the price of METIS from 🦄 Uniswap: */
+  const price = useExchangeMetisPrice(targetNetwork, mainnetProvider);
+
+  console.log("PRICE: ", price);
 
   /* 🔥 This hook will get the price of Gas from ⛽️ EtherGasStation */
   const gasPrice = useGasPrice(targetNetwork, "fast");

@@ -1,5 +1,5 @@
-import { Web3Storage } from 'web3.storage';
-
+//import { Web3Storage } from 'web3.storage';
+import { Web3Storage } from 'web3.storage/dist/bundle.esm.min.js'
 
 // Construct with token and endpoint
 const apiToken = process.env.API_TOKEN || 

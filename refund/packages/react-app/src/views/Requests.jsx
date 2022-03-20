@@ -242,7 +242,9 @@ export default function Requests({
                                 try {
                                   setApproveButtonLoading(true);
                                   let ret = await refundInstance.connect(signer)
-                                    .processRequest(record.key, true);
+                                    .processRequest(record.key, true);//, {
+                                    //   gasLimit: 11000000000,
+                                    // });
                                   console.log(ret);
                                   record.status = APPROVED;
                                   record.display_status = <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag>;
