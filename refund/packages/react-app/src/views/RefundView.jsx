@@ -1,4 +1,15 @@
-import { Button, Divider, Input, Spin, Statistic, Row, Col, notification } from "antd";
+import { Divider, Spin, Statistic, notification } from "antd";
+import { 
+  Button,
+  Row,
+  Col,
+  Card,
+  CardHeader,
+  CardBody,
+  CardTitle,
+  CardFooter,
+  CardText,
+  Input } from "reactstrap";
 import { SendOutlined } from "@ant-design/icons";
 import { useContractExistsAtAddress, useContractLoader } from "eth-hooks";
 import React, { useState, useEffect, useCallback } from "react";
@@ -10,6 +21,15 @@ import { EditableTagGroup } from "../components/EditableTagGroup";
 import refundAbi from "../contracts/refund.json";
 import { Redirect } from "react-router-dom";
 import { CloseOutlined } from "@ant-design/icons";
+import classNames from "classnames";
+import { Line, Bar } from "react-chartjs-2";
+
+import {
+  chartExample1,
+  chartExample2,
+  chartExample3,
+  chartExample4,
+} from "../variables/charts.js";
 
 
 export default function RefundView({
@@ -205,52 +225,155 @@ export default function RefundView({
   let refundInfo
   if (refundAddress && (isMember || isApprover)) {
     refundInfo = (
+      
       <div>
         <h2>{refundName}</h2>
-        <Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
-        <Balance value={refundBalance} price={price} />
+        <Row>
+          <Col lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Total Shipments</h5>
+                <CardTitle tag="h3">
+                  <i className="tim-icons icon-bell-55 text-info" /> 763,215
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div className="chart-area">
+                  aaa
+                  {/* <Line
+                    data={chartExample2.data}
+                    options={chartExample2.options}
+                  /> */}
+                </div>
+              </CardBody>
+            </Card>
+          </Col>
+          {/* <Col lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Daily Sales</h5>
+                <CardTitle tag="h3">
+                  <i className="tim-icons icon-delivery-fast text-primary" />{" "}
+                  3,500€
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div className="chart-area">
+                  <Bar
+                    data={chartExample3.data}
+                    options={chartExample3.options}
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </Col>
+          <Col lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Completed Tasks</h5>
+                <CardTitle tag="h3">
+                  <i className="tim-icons icon-send text-success" /> 12,100K
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div className="chart-area">
+                  <Line
+                    data={chartExample4.data}
+                    options={chartExample4.options}
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </Col> */}
+        </Row>
+        <Row>
+          <Col lg="4">
+            <Card>
+              <CardHeader>
+                <h5 className="title">Address</h5>
+              </CardHeader>
+              <CardBody>
+                <Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
+              </CardBody>
+            </Card>
+          </Col>
+          <Col lg="4">
+            <Card>
+              <CardHeader>
+                <h5 className="title">Balance</h5>
+              </CardHeader>
+              <CardBody>
+                <Balance value={refundBalance} price={price} />
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+        <Row>
+          <Col lg="4">
+            <Card>
+              <CardHeader>
+                <h5 className="title">User Role</h5>
+              </CardHeader>
+              <CardBody>
+                <h4>{isApprover ? "Approver" : isMember ? "Member" : ""}</h4>
+              </CardBody>
+            </Card>
+            {/* <Statistic title="User Role" value={isApprover ? "Approver" : isMember ? "Member" : ""} /> */}
+          </Col>
+          <Col lg="4">
+            <Card>
+              <CardHeader>
+                <h5 className="title">Total Requests</h5>
+              </CardHeader>
+              <CardBody>
+                <h4>{numOfRequests.toString()}</h4>
+              </CardBody>
+            </Card>
+            {/* <Statistic title="Total Requests" value={numOfRequests} /> */}
+          </Col>
+        </Row>
         <Divider />
-        <div style={{ padding: 8 }}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Statistic title="User Role" value={isApprover ? "Approver" : isMember ? "Member" : ""} />
-            </Col>
-            <Col span={12}>
-              <Statistic title="Total Requests" value={numOfRequests} />
-            </Col>
-          </Row>
-        </div>
-        <Divider />
-        <h3>Send funds to this organization:</h3>
-        <div style={{ padding: 4 }}>
-          <EtherInput
-            autofocus
-            price={price}
-            placeholder="Enter Tx Value"
-            value={value}
-            onChange={v => { setValue(v); }}
-          />
-        </div>
-        <Button
-          style={{ marginTop: 8 }}
-          loading={sendingFunds}
-          type={"primary"}
-          onClick={async () => {
-            let amount;
-            try {
-              amount = ethers.utils.parseEther("" + value);
-            } catch (e) {
-              // failed to parseEther, try something else
-              amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
-            }
-            const tx = signer.sendTransaction({
-              to: refundAddress,
-              value: amount
-            });
-          }}
-        >
-          <SendOutlined /> Send funds
-        </Button>
+        <Row>
+          <Col lg="4">
+            <Card>
+              <CardHeader>
+                <h3 className="title">Send funds to this organization:</h3>
+              </CardHeader>
+              <CardBody>
+              <div style={{ padding: 4 }}>
+                <EtherInput
+                  autofocus
+                  price={price}
+                  placeholder="Enter Tx Value"
+                  value={value}
+                  onChange={v => { setValue(v); }}
+                />
+              </div>
+              <Button
+                style={{ marginTop: 8 }}
+                loading={sendingFunds}
+                type={"primary"}
+                onClick={async () => {
+                  let amount;
+                  try {
+                    amount = ethers.utils.parseEther("" + value);
+                  } catch (e) {
+                    // failed to parseEther, try something else
+                    amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
+                  }
+                  const tx = signer.sendTransaction({
+                    to: refundAddress,
+                    value: amount
+                  });
+                }}
+              >
+                <SendOutlined /> Send funds
+              </Button>
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+
       </div>
     )
   } else if (!showDeployForm) {
@@ -261,7 +384,7 @@ export default function RefundView({
         </Button>
         <Divider />
         <div> or enter existing organization name: </div>
-        <Input.Group compact>
+        {/* <Input.Group compact> */}
           <Input placeholder="Organization name"
             style={{ width: 'calc(100% - 100px)' }}
             onChange={async (e) => {
@@ -276,7 +399,7 @@ export default function RefundView({
           }}
           >Enter
           </Button>
-        </Input.Group>
+        {/* </Input.Group> */}
         <div>
           {showError !== '' && <label style={{ color: 'crimson' }}>{showError}</label>}
         </div>
@@ -292,52 +415,108 @@ export default function RefundView({
   } else {
     deployForm = (
       <>
-        <h3>Create a new Refund Organization</h3>
+      <div className="content">
+      <Row>
+        <Col md="8">
+          <Card className="card-user">
+            <CardHeader>
+              <div className="author">
+                <h3 className="title">Create a new Refund Organization</h3>
+              </div>
+            </CardHeader>
+            <CardBody>
+              {/* <div style={{ margin: 8 }}>
+                <div style={{ padding: 4 }}> */}
+                <Row>
+                  <Col className="ml-auto mr-auto text-center" lg="8">
+                    <label>Organization name</label>
+                    <Input placeholder="Organization name"
+                      onChange={async (e) => {
+                        checkNameAvailability(e.target.value)
+                        setName(e.target.value)
+                      }}
+                    />
+                    {nameAlreadyExists && <label>Name already in use</label>}
+                  </Col>
+                </Row>
+                  
+                {/* </div> */}
+                <Divider />
+                <div style={{ padding: 4 }}>
+                  Approvers
+                  <EditableTagGroup key="approvers" setAddresses={setApprovers} />
+                </div>
+                <Divider />
+                <div style={{ padding: 4 }}>
+                  Members
+                  <EditableTagGroup key="members" setAddresses={setMembers} />
+                </div>
+                <Divider />
+                <Button
+                  style={{ marginTop: 8 }}
+                  loading={deploying}
+                  type={"primary"}
+                  onClick={async () => {
+                    console.log("approvers", approvers);
+                    console.log("members", members);
+                    deployRefund(name, approvers, members);
+                  }}
+                >
+                  Create
+                </Button>
 
-        <div style={{ margin: 8 }}>
-          <div style={{ padding: 4 }}>
-            <Input placeholder="Organization name"
-              onChange={async (e) => {
-                checkNameAvailability(e.target.value)
-                setName(e.target.value)
-              }}
-            />
-            {nameAlreadyExists && <label>Name already in use</label>}
-          </div>
-          <Divider />
-          <div style={{ padding: 4 }}>
-            Approvers
-            <EditableTagGroup key="approvers" setAddresses={setApprovers} />
-          </div>
-          <Divider />
-          <div style={{ padding: 4 }}>
-            Members
-            <EditableTagGroup key="members" setAddresses={setMembers} />
-          </div>
-          <Divider />
-          <Button
-            style={{ marginTop: 8 }}
-            loading={deploying}
-            type={"primary"}
-            onClick={async () => {
-              console.log("approvers", approvers);
-              console.log("members", members);
-              deployRefund(name, approvers, members);
-            }}
-          >
-            Create
-          </Button>
+              {/* </div> */}
+            </CardBody>
+          </Card>
+        </Col>
+        <Col md="4">
+            <Card className="card-user">
+              <CardBody>
+                <CardText />
+                <div className="author">
+                  <div className="block block-one" />
+                  <div className="block block-two" />
+                  <div className="block block-three" />
+                  <div className="block block-four" />
+                  <a href="#pablo" onClick={(e) => e.preventDefault()}>
 
-        </div>
+                    <h5 className="title">Mike Andrew</h5>
+                  </a>
+                  <p className="description">Ceo/Co-Founder</p>
+                </div>
+                <div className="card-description">
+                  Do not be scared of the truth because we need to restart the
+                  human foundation in truth And I love you like Kanye loves
+                  Kanye I love Rick Owens’ bed design but the back is...
+                </div>
+              </CardBody>
+              <CardFooter>
+                <div className="button-container">
+                  <Button className="btn-icon btn-round" color="facebook">
+                    <i className="fab fa-facebook" />
+                  </Button>
+                  <Button className="btn-icon btn-round" color="twitter">
+                    <i className="fab fa-twitter" />
+                  </Button>
+                  <Button className="btn-icon btn-round" color="google">
+                    <i className="fab fa-google-plus" />
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          </Col>
+      </Row>
+      </div>
       </>
     )
   }
   
   return (
-    <div>
+    <div className="content">
       {wait ? <Spin /> : (<>
         {!signer && <Redirect to="/" />}
-        <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto", marginTop: 32, marginBottom: 32 }}>
+        {/* <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto", marginTop: 32, marginBottom: 32 }}> */}
+        <div className="content">
           {refundAddress || showDeployForm ? <Row style={{ paddingTop: 0, width: 372, margin: "auto" }}>
             <Col span={1} offset={23}>
               <Button

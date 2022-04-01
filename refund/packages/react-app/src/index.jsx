@@ -1,32 +1,34 @@
-import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
 import React from "react";
 import { ThemeSwitcherProvider } from "react-css-theme-switcher";
 import { BrowserRouter } from "react-router-dom";
 import ReactDOM from "react-dom";
 import App from "./App";
-import "./index.css";
+//import "./index.css";
 
-const themes = {
-  dark: `${process.env.PUBLIC_URL}/dark-theme.css`,
-  light: `${process.env.PUBLIC_URL}/light-theme.css`,
-};
+import "./assets/scss/black-dashboard-react.scss";
+import "./assets/demo/demo.css";
+import "./assets/css/nucleo-icons.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
-const prevTheme = window.localStorage.getItem("theme");
+import ThemeContextWrapper from "./components/ThemeWrapper";
+import BackgroundColorWrapper from "./components/BackgroundColorWrapper";
 
-const subgraphUri = "http://localhost:8000/subgraphs/name/scaffold-eth/your-contract";
+//const subgraphUri = "http://localhost:8000/subgraphs/name/scaffold-eth/your-contract";
 
-const client = new ApolloClient({
-  uri: subgraphUri,
-  cache: new InMemoryCache(),
-});
+// const client = new ApolloClient({
+//   uri: subgraphUri,
+//   cache: new InMemoryCache(),
+// });
 
 ReactDOM.render(
-  <ApolloProvider client={client}>
-    <ThemeSwitcherProvider themeMap={themes} defaultTheme={prevTheme || "dark"}>
+    //<ThemeSwitcherProvider themeMap={themes} defaultTheme={prevTheme || "dark"}>
+  <ThemeContextWrapper>
+    <BackgroundColorWrapper>
       <BrowserRouter>
-        <App subgraphUri={subgraphUri} />
+        <App />
       </BrowserRouter>
-    </ThemeSwitcherProvider>
-  </ApolloProvider>,
+    </BackgroundColorWrapper>
+  </ThemeContextWrapper>,
+    //</BackgroundColorWrapper></ThemeSwitcherProvider>,
   document.getElementById("root"),
 );
