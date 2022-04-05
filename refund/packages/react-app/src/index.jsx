@@ -1,6 +1,16 @@
+import { Route, Switch, Redirect } from "react-router-dom";
+
+import "../src/assets/scss/black-dashboard-react.scss";
+import "../src/assets/demo/demo.css";
+import "../src/assets/css/nucleo-icons.css";
+import "@fortawesome/fontawesome-free/css/all.min.css";
+
+import ThemeContextWrapper from "./components/ThemeWrapper/ThemeWrapper";
+import BackgroundColorWrapper from "./components/BackgroundColorWrapper/BackgroundColorWrapper";
+
+
 import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
 import React from "react";
-import { ThemeSwitcherProvider } from "react-css-theme-switcher";
 import { BrowserRouter } from "react-router-dom";
 import ReactDOM from "react-dom";
 import App from "./App";
@@ -21,12 +31,12 @@ const client = new ApolloClient({
 });
 
 ReactDOM.render(
-  <ApolloProvider client={client}>
-    <ThemeSwitcherProvider themeMap={themes} defaultTheme={prevTheme || "dark"}>
+  <ThemeContextWrapper>
+    <BackgroundColorWrapper>
       <BrowserRouter>
-        <App subgraphUri={subgraphUri} />
+      <App subgraphUri={subgraphUri} />
       </BrowserRouter>
-    </ThemeSwitcherProvider>
-  </ApolloProvider>,
+    </BackgroundColorWrapper>
+  </ThemeContextWrapper>,
   document.getElementById("root"),
 );

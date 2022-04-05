@@ -43,6 +43,7 @@ export default function EtherInput(props) {
 
   return (
     <Input
+      style={props.style}
       placeholder={props.placeholder ? props.placeholder : "amount in " + mode}
       autoFocus={props.autoFocus}
       prefix={mode === "USD" ? "$" : "Ξ"}

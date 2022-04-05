@@ -1,4 +1,25 @@
-import { Select, Row, Col, Button, Divider, Input, Spin } from "antd";
+import { Select, Divider, Input, Spin } from "antd";
+import {
+  Button,
+  ButtonGroup,
+  Card,
+  CardHeader,
+  CardBody,
+  CardTitle,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  UncontrolledDropdown,
+  Label,
+  FormGroup,
+  Row, Col,
+  Table,
+
+  UncontrolledTooltip,
+} from "reactstrap";
+
+
+
 import React, { useCallback, useState, useEffect } from "react";
 import { ethers, utils } from "ethers";
 import { CloseOutlined } from "@ant-design/icons";
@@ -15,7 +36,6 @@ const Tesseract = require('tesseract.js');
 export default function NewRefundRequest({
   address,
   price,
-  trigger,
   signer,
   refundInstance,
 }) {
@@ -31,25 +51,25 @@ export default function NewRefundRequest({
   function previewRefundAmount() {
     console.log(recognitionState);
     if (recognitionState.match("inProgress")) return (
-      <div style={{ marginTop: 32 }}>
+      <div>
         <Spin />
       </div>)
     else {
       return (
-        <div>
-          <RefundAmountInput
-            autofocus
-            price={price}
-            placeholder="Refund amount"
-            value={refundAmount}
-            onChange={v => {
-              setErrorMessage('');
-              setRefundAmount(v);
-            }}
-            display={display}
-            setDisplay={setDisplay}
-          />
-        </div>)
+        <RefundAmountInput
+          style={{width: "50%"}}
+          autofocus
+          price={price}
+          placeholder="Refund amount"
+          value={refundAmount}
+          onChange={v => {
+            setErrorMessage('');
+            setRefundAmount(v);
+          }}
+          display={display}
+          setDisplay={setDisplay}
+        />
+      )
     }
   }
 
@@ -122,14 +142,13 @@ export default function NewRefundRequest({
           category
         );
         setButtonLoading(false);
-        trigger(false);
       }
       catch (error) {
         console.error(error);
         setButtonLoading(false);
         setErrorMessage("Transaction failed");
       }
-      
+
     }, function (err) {
       console.log(err);
       setButtonLoading(false);
@@ -137,74 +156,118 @@ export default function NewRefundRequest({
   });
 
   return (
-    <div>
-      <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto" }}>
+    <div className="content">
+      <div>
+        <Card className="card-chart">
+          <CardHeader>
+            <CardTitle tag="h3">
+              Add New Reimbursement Request
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Row>
 
-        <Row style={{ paddingTop: 0, width: 372, margin: "auto" }}>
-          <Col span={1} offset={23}>
-            <Button
-              icon={<CloseOutlined />}
-              size="small"
-              type="text"
-              onClick={async () => { trigger(false) }}
-            />
+          <Card className="card-chart">
+            <CardHeader>
+              <CardTitle tag="h4">
+                Upload receipt
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              <div>
+                <UploadPhoto
+                  fileList={receiptImages}
+                  setFileList={setReceiptImages}
+                />
+              </div>
+            </CardBody>
+            <br />
+          </Card>
+        </Row>
+        <Row>
+          <Col lg="6">
+            <Card className="card-chart">
+              <CardHeader>
+                <CardTitle tag="h4">
+                  Refund amount
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                {previewRefundAmount()}
+              </CardBody>
+              <br />
+            </Card>
+          </Col>
+          <Col lg="6">
+            <Card className="card-chart">
+              <CardHeader>
+                <CardTitle tag="h4">
+                  Category
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div>
+                  <Select
+                    placeholder={"Category"}
+                    style={{ width: "50%", textAlign: "left" }}
+                    onChange={e => {
+                      setErrorMessage('');
+                      setCategory(e);
+                    }}>
+                    <Option value="Equipment">Equipment</Option>
+                    <Option value="Home Office">Home Office</Option>
+                    <Option value="Meals and Entertainment">Meals and Entertainment</Option>
+                    <Option value="Office Supplies">Office Supplies</Option>
+                    <Option value="Travel">Travel</Option>
+                    <Option value="Other">Other</Option>
+                  </Select>
+                </div>
+              </CardBody>
+              <br />
+            </Card>
           </Col>
         </Row>
-        <h2>Add new reimbursement request</h2>
-        <Divider />
-        <div style={{ margin: 8 }}>
-          <h4>Upload receipt</h4>
-          <UploadPhoto
-            fileList={receiptImages}
-            setFileList={setReceiptImages}
-          />
-          <Divider />
-          <h4>Refund amount</h4>
-          {previewRefundAmount()}
-          <Divider />
-          <h4>Category</h4>
-          <Select
-            placeholder={"Category"}
-            style={{ width: 348, textAlign: "left" }}
-            onChange={e => {
-              setErrorMessage('');
-              setCategory(e);
-            }}>
-            <Option value="Equipment">Equipment</Option>
-            <Option value="Home Office">Home Office</Option>
-            <Option value="Meals and Entertainment">Meals and Entertainment</Option>
-            <Option value="Office Supplies">Office Supplies</Option>
-            <Option value="Travel">Travel</Option>
-            <Option value="Other">Other</Option>
-          </Select>
+        <Row>
+          <Card className="card-chart">
+            <CardHeader>
+              <CardTitle tag="h4">
+                Description
+              </CardTitle>
+            </CardHeader>
+            <CardBody>
+              <div style={{ verticalAlign: "center" }}>
+                <TextArea
+                  style={{ width: "50%" }}
+                  autoSize={{ minRows: 2, maxRows: 3 }}
+                  onChange={e => {
+                    setErrorMessage('');
+                    setDescription(e.target.value);
+                  }}
+                  placeholder={"Description"}
+                />
+              </div>
+            </CardBody>
+            <br />
+          </Card>
+        </Row>
 
-          <Divider />
-          <h4>Description</h4>
-          <TextArea
-            autoSize={{ minRows: 2, maxRows: 3 }}
-            onChange={e => {
-              setErrorMessage('');
-              setDescription(e.target.value);
-            }}
-            placeholder={"Description"}
-          />
-          <Divider />
-          <Button
-            type={"primary"}
-            loading={buttonLoading}
-            style={{ marginTop: 8 }}
-            onClick={async () => {
-              setErrorMessage('');
-              createNewRequest();
-            }}
-          >
-            Send Request!
-          </Button>
-          <div>
-          {errorMessage !== '' && <label style={{color: 'crimson'}}>{errorMessage}</label>}
-          </div>
+        <Button
+          type={"primary"}
+          loading={buttonLoading}
+          style={{ marginTop: 8 }}
+          onClick={async () => {
+            setErrorMessage('');
+            createNewRequest();
+          }}
+        >
+          {buttonLoading ? <><Spin />&nbsp;</> : ""}
+          Send Request!
+        </Button>
+        <div>
+          {errorMessage !== '' && <label style={{ color: 'crimson' }}>{errorMessage}</label>}
         </div>
+
       </div>
-    </div>
+    </div >
   );
 }

@@ -1,4 +1,27 @@
-import { Button, Col, Menu, Row } from "antd";
+import { Col, Menu, Row } from "antd";
+import {
+  Button,
+  Collapse,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  UncontrolledDropdown,
+  Card,
+  CardHeader,
+  CardBody,
+  CardTitle,
+  Input,
+  InputGroup,
+  NavbarBrand,
+  Navbar,
+  NavLink,
+  Nav,
+  Container,
+  Modal,
+  NavbarToggler,
+  ModalHeader,
+} from "reactstrap";
+
 import "antd/dist/antd.css";
 import {
   useBalance,
@@ -11,6 +34,16 @@ import {
 import { useExchangeMetisPrice } from "./hooks";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, Route, Switch, useLocation, Redirect } from "react-router-dom";
+import PerfectScrollbar from "perfect-scrollbar";
+import AdminNavbar from "./components/Navbars/AdminNavbar.js";
+import Footer from "./components/Footer/Footer.js";
+import Sidebar from "./components/Sidebar/Sidebar.js";
+import FixedPlugin from "./components/FixedPlugin/FixedPlugin.js";
+import routes from "./routes.js";
+
+import logo from "./assets/img/refund.png";
+import { BackgroundColorContext } from "./contexts/BackgroundColorContext";
+
 import "./App.css";
 import {
   Account,
@@ -19,7 +52,7 @@ import {
   GasGauge,
   Header,
   Ramp,
-  ThemeSwitch,
+  //ThemeSwitch,
   NetworkDisplay,
   FaucetHint,
   NetworkSwitch,
@@ -30,8 +63,9 @@ import externalContracts from "./contracts/external_contracts";
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import abi from "./contracts/refund.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
-import { Home, ExampleUI, Hints, Subgraph, Requests, RefundView } from "./views";
+import { Home, ExampleUI, Hints, Subgraph, Requests, RefundView, NewRefundRequest } from "./views";
 import { useStaticJsonRPC } from "./hooks";
+import UserProfile from "./views/UserProfile.jsx";
 
 const { ethers } = require("ethers");
 /*
@@ -55,7 +89,7 @@ const { ethers } = require("ethers");
 
 /// 📡 What chain are your contracts deployed to?
 
-const initialNetwork = NETWORKS.testnetMetis;// <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const initialNetwork = NETWORKS.localhost;// <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -117,7 +151,7 @@ function App(props) {
   const gasPrice = useGasPrice(targetNetwork, "fast");
   // Use your injected provider from 🦊 Metamask or if you don't have it then instantly generate a 🔥 burner wallet.
   const userProviderAndSigner = useUserProviderAndSigner(injectedProvider, localProvider, USE_BURNER_WALLET);
-  
+
   const userSigner = userProviderAndSigner.signer;
 
   useEffect(() => {
@@ -150,12 +184,13 @@ function App(props) {
 
   const contractConfig = {
     deployedContracts: deployedContracts || {},
-    externalContracts: externalContracts || {},};
-  
+    externalContracts: externalContracts || {},
+  };
+
   // const refund = {
   //   abi,
   //   address: "0xCafac3dD18aC6c6e92c921884f9E4176737C052c"};
-  
+
   // const myCustomcontract = {
   //   31337: {
   //     contracts: {
@@ -208,6 +243,81 @@ function App(props) {
   //
   // 🧫 DEBUG 👨🏻‍🔬
   //
+
+  var ps;
+
+  const mainPanelRef = React.useRef(null);
+  const [sidebarOpened, setsidebarOpened] = React.useState(
+    document.documentElement.className.indexOf("nav-open") !== -1
+  );
+  React.useEffect(() => {
+    if (navigator.platform.indexOf("Win") > -1) {
+      document.documentElement.className += " perfect-scrollbar-on";
+      document.documentElement.classList.remove("perfect-scrollbar-off");
+      ps = new PerfectScrollbar(mainPanelRef.current, {
+        suppressScrollX: true,
+      });
+      let tables = document.querySelectorAll(".table-responsive");
+      for (let i = 0; i < tables.length; i++) {
+        ps = new PerfectScrollbar(tables[i]);
+      }
+    }
+    // Specify how to clean up after this effect:
+    return function cleanup() {
+      if (navigator.platform.indexOf("Win") > -1) {
+        ps.destroy();
+        document.documentElement.classList.add("perfect-scrollbar-off");
+        document.documentElement.classList.remove("perfect-scrollbar-on");
+      }
+    };
+  });
+  React.useEffect(() => {
+    if (navigator.platform.indexOf("Win") > -1) {
+      let tables = document.querySelectorAll(".table-responsive");
+      for (let i = 0; i < tables.length; i++) {
+        ps = new PerfectScrollbar(tables[i]);
+      }
+    }
+    document.documentElement.scrollTop = 0;
+    document.scrollingElement.scrollTop = 0;
+    if (mainPanelRef.current) {
+      mainPanelRef.current.scrollTop = 0;
+    }
+  }, [location]);
+  // this function opens and closes the sidebar on small devices
+  const toggleSidebar = () => {
+    document.documentElement.classList.toggle("nav-open");
+    setsidebarOpened(!sidebarOpened);
+  };
+
+  /*const getRoutes = (routes) => {
+    return routes.map((prop, key) => {
+      if (prop.layout === "/admin") {
+        return (
+          <Route
+            path={prop.layout + prop.path}
+            component={prop.component}
+            key={key}
+          />
+        );
+      } else {
+        return null;
+      }
+    });
+  };*/
+  const getBrandText = (path) => {
+    for (let i = 0; i < routes.length; i++) {
+      if (location.pathname.indexOf(routes[i].layout + routes[i].path) !== -1) {
+        return routes[i].name;
+      }
+    }
+    return "Brand";
+  };
+
+
+
+
+
   useEffect(() => {
     if (
       DEBUG &&
@@ -277,98 +387,6 @@ function App(props) {
 
   return (
     <div className="App">
-      {/* ✏️ Edit the header and change the title to your project name */}
-      <Header />
-      <NetworkDisplay
-        NETWORKCHECK={NETWORKCHECK}
-        localChainId={localChainId}
-        selectedChainId={selectedChainId}
-        targetNetwork={targetNetwork}
-        logoutOfWeb3Modal={logoutOfWeb3Modal}
-        USE_NETWORK_SELECTOR={USE_NETWORK_SELECTOR}
-      />
-      <Menu 
-        style={{ textAlign: "center", marginTop: 40 }} 
-        selectedKeys={[location.pathname]} mode="horizontal">
-        <Menu.Item key="/home">
-          <Link to="/home">Home</Link>
-        </Menu.Item>
-        {refundInstance && 
-        <Menu.Item key="/requests">
-          <Link to="/requests">Reimbursement Requests</Link>
-        </Menu.Item>}
-      </Menu>
-
-      <Switch>
-        <Route exact path="/">
-        <div style={{ border: "1px solid #cccccc", padding: 16, width: 400, margin: "auto", marginTop: 64 }}>
-          {!userSigner ? <h1>Please connect your wallet</h1> :
-            <Redirect to="/home"></Redirect>
-          }
-        </div>
-        </Route>
-        <Route path="/home">
-          <RefundView
-            address={address}
-            mainnetProvider={mainnetProvider}
-            localProvider={localProvider}
-            price={price}
-            blockExplorer={blockExplorer}
-            provider={localProvider}
-            contractConfig={contractConfig}
-            signer={userSigner}
-            setRefundInstance={setRefundInstance}
-            refundInstance={refundInstance}
-            setIsApprover={setIsApprover}
-            isApprover={isApprover}
-            setIsMember={setIsMember}
-            isMember={isMember}
-          />
-        </Route>
-        <Route path="/requests">
-          <Requests
-            localProvider={localProvider}
-            price={price}
-            address={address}
-            refundInstance={refundInstance}
-            signer={userSigner}
-            isApprover={isApprover}
-          />
-        </Route>
-      </Switch>
-
-      <ThemeSwitch />
-
-      {/* 👨‍💼 Your account is in the top right with a wallet at connect options */}
-      <div style={{ position: "fixed", textAlign: "right", right: 0, top: 0, padding: 10 }}>
-        <div style={{ display: "flex", flex: 1, alignItems: "center" }}>
-          {USE_NETWORK_SELECTOR && (
-            <div style={{ marginRight: 20 }}>
-              <NetworkSwitch
-                networkOptions={networkOptions}
-                selectedNetwork={selectedNetwork}
-                setSelectedNetwork={setSelectedNetwork}
-              />
-            </div>
-          )}
-          <Account
-            useBurner={USE_BURNER_WALLET}
-            address={address}
-            localProvider={localProvider}
-            userSigner={userSigner}
-            mainnetProvider={mainnetProvider}
-            price={price}
-            web3Modal={web3Modal}
-            loadWeb3Modal={loadWeb3Modal}
-            logoutOfWeb3Modal={logoutOfWeb3Modal}
-            blockExplorer={blockExplorer}
-          />
-        </div>
-        {/* {yourLocalBalance.lte(ethers.BigNumber.from("0")) && (
-          <FaucetHint localProvider={localProvider} targetNetwork={targetNetwork} address={address} />
-        )} */}
-      </div>
-
       <div style={{ position: "fixed", textAlign: "left", left: 10, bottom: 8 }}>
         <Row align="middle" gutter={[4, 4]}>
           <Col>
@@ -405,7 +423,7 @@ function App(props) {
             </Button>
           </Col>
         </Row>
-{/*
+        {/*
         <Row align="middle" gutter={[4, 4]}>
           <Col span={24}>
             {
@@ -418,6 +436,137 @@ function App(props) {
           </Col>
           </Row>*/}
       </div>
+
+
+      <BackgroundColorContext.Consumer>
+        {({ color, changeColor }) => (
+          <React.Fragment>
+            <div className="wrapper">
+              <Sidebar
+                routes={routes}
+                logo={{
+                  outterLink: "https://www.creative-tim.com/",
+                  text: "Refund",
+                  imgSrc: logo,
+                }}
+                toggleSidebar={toggleSidebar}
+              />
+              <div className="main-panel" ref={mainPanelRef} data={color}>
+                <AdminNavbar
+                  brandText={getBrandText(location.pathname)}
+                  toggleSidebar={toggleSidebar}
+                  sidebarOpened={sidebarOpened}
+                >
+                  <Account
+                    useBurner={USE_BURNER_WALLET}
+                    address={address}
+                    localProvider={localProvider}
+                    userSigner={userSigner}
+                    mainnetProvider={mainnetProvider}
+                    price={price}
+                    web3Modal={web3Modal}
+                    loadWeb3Modal={loadWeb3Modal}
+                    logoutOfWeb3Modal={logoutOfWeb3Modal}
+                    blockExplorer={blockExplorer}
+                  />
+                </AdminNavbar>
+
+                <Switch>
+                  <Route exact path="/">
+                    <div className="content">
+                      {!userSigner ?
+                        <Card className="card-chart">
+                          <CardHeader>
+                            <CardTitle tag="h3">
+                              Please connect your wallet
+                            </CardTitle>
+                          </CardHeader>
+                        </Card>
+                        :
+                        <Redirect to="/home"></Redirect>
+                      }
+                    </div>
+                  </Route>
+                  <Route path="/home">
+                    <Home
+                      address={address}
+                      mainnetProvider={mainnetProvider}
+                      localProvider={localProvider}
+                      price={price}
+                      blockExplorer={blockExplorer}
+                      provider={localProvider}
+                      contractConfig={contractConfig}
+                      signer={userSigner}
+                      setRefundInstance={setRefundInstance}
+                      refundInstance={refundInstance}
+                      setIsApprover={setIsApprover}
+                      isApprover={isApprover}
+                      setIsMember={setIsMember}
+                      isMember={isMember}
+                    />
+                  </Route>
+                  <Route path="/org-profile">
+                    <RefundView
+                      address={address}
+                      mainnetProvider={mainnetProvider}
+                      localProvider={localProvider}
+                      price={price}
+                      blockExplorer={blockExplorer}
+                      provider={localProvider}
+                      contractConfig={contractConfig}
+                      signer={userSigner}
+                      setRefundInstance={setRefundInstance}
+                      refundInstance={refundInstance}
+                      setIsApprover={setIsApprover}
+                      isApprover={isApprover}
+                      setIsMember={setIsMember}
+                      isMember={isMember}
+                    />
+                  </Route>
+                  <Route path="/requests">
+                    <Requests
+                      localProvider={localProvider}
+                      price={price}
+                      address={address}
+                      refundInstance={refundInstance}
+                      signer={userSigner}
+                      isApprover={isApprover}
+                    />
+                  </Route>
+                  <Route path="/new-request">
+                    <NewRefundRequest
+                      price={price}
+                      address={address}
+                      refundInstance={refundInstance}
+                      signer={userSigner}
+                    />
+                  </Route>
+                  <Route path="/user-profile">
+                    <UserProfile
+                      localProvider={localProvider}
+                      price={price}
+                      address={address}
+                      refundInstance={refundInstance}
+                      signer={userSigner}
+                      isApprover={isApprover}
+                      isMember={isMember}
+                    />
+                  </Route>
+                </Switch>
+                {
+                  // we don't want the Footer to be rendered on map page
+                  location.pathname === "/admin/maps" ? null : <Footer fluid />
+                }
+              </div>
+            </div>
+            <FixedPlugin bgColor={color} handleBgClick={changeColor} />
+          </React.Fragment>
+        )}
+      </BackgroundColorContext.Consumer>
+
+
+
+
     </div>
   );
 }

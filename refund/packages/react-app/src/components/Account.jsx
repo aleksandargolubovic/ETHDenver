@@ -1,6 +1,10 @@
-import { Button } from "antd";
+
+import {
+  Button
+} from "reactstrap";
+
+
 import React from "react";
-import { useThemeSwitcher } from "react-css-theme-switcher";
 
 import Address from "./Address";
 import Balance from "./Balance";
@@ -56,7 +60,6 @@ export default function Account({
   blockExplorer,
   isContract,
 }) {
-  const { currentTheme } = useThemeSwitcher();
 
   const modalButtons = [];
   if (web3Modal) {
@@ -101,7 +104,7 @@ export default function Account({
             signer={userSigner}
             ensProvider={mainnetProvider}
             price={price}
-            color={currentTheme === "light" ? "#1890ff" : "#2caad9"}
+            color={"currentTheme" === "light" ? "#1890ff" : "#2caad9"}
           />
         </>
       ) : useBurner ? (
@@ -124,7 +127,7 @@ export default function Account({
             signer={userSigner}
             ensProvider={mainnetProvider}
             price={price}
-            color={currentTheme === "light" ? "#1890ff" : "#2caad9"}
+            color={"currentTheme" === "light" ? "#1890ff" : "#2caad9"}
           />
         </>
       ) : (

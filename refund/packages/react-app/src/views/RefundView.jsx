@@ -1,4 +1,35 @@
-import { Button, Divider, Input, Spin, Statistic, Row, Col, notification } from "antd";
+import { Input, Divider, Spin, Statistic, notification } from "antd";
+import {
+  Button,
+  ButtonGroup,
+  Card,
+  CardHeader,
+  CardBody,
+  CardTitle,
+  DropdownToggle,
+  DropdownMenu,
+  DropdownItem,
+  UncontrolledDropdown,
+  Label,
+  FormGroup,
+  Row, Col,
+  Table,
+
+  UncontrolledTooltip,
+} from "reactstrap";
+
+import classNames from "classnames";
+// react plugin used to create charts
+import { Line, Bar } from "react-chartjs-2";
+
+import {
+  chartExample1,
+  chartExample2,
+  chartExample3,
+  chartExample4,
+} from "../variables/charts.js";
+
+
 import { SendOutlined } from "@ant-design/icons";
 import { useContractExistsAtAddress, useContractLoader } from "eth-hooks";
 import React, { useState, useEffect, useCallback } from "react";
@@ -30,6 +61,13 @@ export default function RefundView({
   isMember,
   setIsMember
 }) {
+
+
+  const [bigChartData, setbigChartData] = React.useState("data1");
+  const setBgChartData = (name) => {
+    setbigChartData(name);
+  };
+
   const NULL_ADDRESS = "0x0000000000000000000000000000000000000000";
   const REGISTRY = "Registry";
   const REFUND_FACTORY = "RefundFactory";
@@ -52,13 +90,12 @@ export default function RefundView({
   //   useContractExistsAtAddress(provider, refundFactoryContract.address);
 
   const [refundAddress, setRefundAddress] = useLocalStorage("deployedRefund");
-  const [showDeployForm, setShowDeployForm] = useState(false);
   const [deploying, setDeploying] = useState();
   const [sendingFunds, setSendingFunds] = useState();
   const [showRefundInfo, setShowRefundInfo] = useState();
   const [numOfRequests, setNumOfRequests] = useState(0);
   const [updateNumReqs, setUpdateNumReqs] = useState(false);
-  
+
   const refundBalance = useBalance(localProvider, refundAddress);
 
   const addNewEvent = useCallback((...listenerArgs) => {
@@ -119,13 +156,13 @@ export default function RefundView({
 
           refundInstance.on(filter, addNewEvent);
           console.log("SUBSCRIBED");
-            
+
         } catch (error) {
           console.log(error);
           setTimeout(() => {
-            init();  
+            init();
           }, 100);
-          
+
         }
       }
       init();
@@ -136,10 +173,6 @@ export default function RefundView({
       };
     }
   }, [refundInstance]);
-
-  const createNewRefund = useCallback((showDeployForm) => {
-    setShowDeployForm(showDeployForm);
-  }, []);
 
   useEffect(() => {
     if (refundName && registryContract) {
@@ -165,201 +198,157 @@ export default function RefundView({
     }
   };
 
-  const deployRefund = useCallback(async (name, approvers, members) => {
-    if (!refundFactoryContract) return;
-    setDeploying(true);
-    let refund;
-    try {
-      refund = await refundFactoryContract.connect(signer)
-        .newRefundOrg(name, approvers, members);
-    } catch (error) {
-      console.error(error)
-      setDeploying(false)
-      return
-    }
-    console.log("New refund created: ", refund);
-    setDeploying(false);
-    setRefundName(name);
-    setShowDeployForm(false);
-  }, [refundFactoryContract])
-
-  const checkNameAvailability = async (newName) => {
-    if (registryContract) {
-      let nameOk;
-      try {
-        nameOk = await registryContract.refundOrgs(newName);
-        if (nameOk === NULL_ADDRESS) {
-          setNameAlreadyExists(false);
-          return true;
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    } else {
-      console.log("Registry contract is not initialized yet");
-    }
-    setNameAlreadyExists(true);
-    return false;
-  };
-
   let refundInfo
   if (refundAddress && (isMember || isApprover)) {
     refundInfo = (
       <div>
-        <h2>{refundName}</h2>
-        <Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} />
-        <Balance value={refundBalance} price={price} />
-        <Divider />
-        <div style={{ padding: 8 }}>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Statistic title="User Role" value={isApprover ? "Approver" : isMember ? "Member" : ""} />
-            </Col>
-            <Col span={12}>
-              <Statistic title="Total Requests" value={numOfRequests} />
-            </Col>
-          </Row>
-        </div>
-        <Divider />
-        <h3>Send funds to this organization:</h3>
-        <div style={{ padding: 4 }}>
-          <EtherInput
-            autofocus
-            price={price}
-            placeholder="Enter Tx Value"
-            value={value}
-            onChange={v => { setValue(v); }}
-          />
-        </div>
-        <Button
-          style={{ marginTop: 8 }}
-          loading={sendingFunds}
-          type={"primary"}
-          onClick={async () => {
-            let amount;
-            try {
-              amount = ethers.utils.parseEther("" + value);
-            } catch (e) {
-              // failed to parseEther, try something else
-              amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
-            }
-            const tx = signer.sendTransaction({
-              to: refundAddress,
-              value: amount
-            });
-          }}
-        >
-          <SendOutlined /> Send funds
-        </Button>
-      </div>
-    )
-  } else if (!showDeployForm) {
-    refundInfo = (
-      <div style={{ padding: 32 }}>
-        <Button onClick={() => createNewRefund(true)} type={"primary"} >
-          CREATE A NEW REFUND ORG
-        </Button>
-        <Divider />
-        <div> or enter existing organization name: </div>
-        <Input.Group compact>
-          <Input placeholder="Organization name"
-            style={{ width: 'calc(100% - 100px)' }}
-            onChange={async (e) => {
-              setShowError('');
-              checkNameAvailability(e.target.value)
-              setName(e.target.value)
-            }}
-          />
-          <Button type="primary" onClick={() => {
-            setRefundName('');
-            setRefundName(name);
-          }}
-          >Enter
-          </Button>
-        </Input.Group>
-        <div>
-          {showError !== '' && <label style={{ color: 'crimson' }}>{showError}</label>}
-        </div>
+        <Row>
+          <Col xs="12" lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Organization Name</h5>
+
+              </CardHeader>
+              <CardBody>
+                <CardTitle tag="h2">{refundName}</CardTitle>
+              </CardBody>
+            </Card>
+          </Col>
+          <Col xs="12" lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Organization Contract Address</h5>
+
+              </CardHeader>
+              <CardBody>
+                <CardTitle tag="h2"><Address value={refundAddress} ensProvider={mainnetProvider} blockExplorer={blockExplorer} /></CardTitle>
+              </CardBody>
+            </Card>
+          </Col>
+          <Col xs="12" lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Balance</h5>
+
+              </CardHeader>
+              <CardBody>
+                <CardTitle tag="h2"><Balance value={refundBalance} price={price} /></CardTitle>
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+        <Row>
+          <Col lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Total Requests</h5>
+                <CardTitle tag="h3">
+                  <i className="tim-icons icon-bell-55 text-info" />{numOfRequests.toString()}
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div className="chart-area">
+                  <Line
+                    data={chartExample2.data}
+                    options={chartExample2.options}
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </Col>
+          <Col lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Total Money Refunded</h5>
+                <CardTitle tag="h3">
+                  <i className="tim-icons icon-delivery-fast text-primary" />{" "}
+                  3,500€
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div className="chart-area">
+                  <Bar
+                    data={chartExample3.data}
+                    options={chartExample3.options}
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </Col>
+          <Col lg="4">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Requests Status</h5>
+                <CardTitle tag="h3">
+                  <i className="tim-icons icon-send text-success" /> 12,100K
+                </CardTitle>
+              </CardHeader>
+              <CardBody>
+                <div className="chart-area">
+                  <Line
+                    data={chartExample4.data}
+                    options={chartExample4.options}
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+        <Row>
+          <Col lg="8">
+            <Card className="card-chart">
+              <CardHeader>
+                <h5 className="card-category">Send funds to this organization</h5>
+              </CardHeader>
+              <CardBody>
+                <div>
+                  <div style={{ padding: 4 }}>
+                    <EtherInput
+                      style={{ width: "70%" }}
+                      autofocus
+                      price={price}
+                      placeholder="Enter Tx Value"
+                      value={value}
+                      onChange={v => { setValue(v); }}
+                    />
+                  </div>
+                  <Button
+                    style={{ marginTop: 8 }}
+                    loading={sendingFunds}
+                    type={"primary"}
+                    onClick={async () => {
+                      let amount;
+                      try {
+                        amount = ethers.utils.parseEther("" + value);
+                      } catch (e) {
+                        // failed to parseEther, try something else
+                        amount = ethers.utils.parseEther("" + parseFloat(value).toFixed(8));
+                      }
+                      const tx = signer.sendTransaction({
+                        to: refundAddress,
+                        value: amount
+                      });
+                    }}
+                  >
+                    <SendOutlined /> Send funds
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
       </div>
     )
   } else {
     refundInfo = "";
   }
 
-  let deployForm
-  if (!showDeployForm) {
-    deployForm = ""
-  } else {
-    deployForm = (
-      <>
-        <h3>Create a new Refund Organization</h3>
-
-        <div style={{ margin: 8 }}>
-          <div style={{ padding: 4 }}>
-            <Input placeholder="Organization name"
-              onChange={async (e) => {
-                checkNameAvailability(e.target.value)
-                setName(e.target.value)
-              }}
-            />
-            {nameAlreadyExists && <label>Name already in use</label>}
-          </div>
-          <Divider />
-          <div style={{ padding: 4 }}>
-            Approvers
-            <EditableTagGroup key="approvers" setAddresses={setApprovers} />
-          </div>
-          <Divider />
-          <div style={{ padding: 4 }}>
-            Members
-            <EditableTagGroup key="members" setAddresses={setMembers} />
-          </div>
-          <Divider />
-          <Button
-            style={{ marginTop: 8 }}
-            loading={deploying}
-            type={"primary"}
-            onClick={async () => {
-              console.log("approvers", approvers);
-              console.log("members", members);
-              deployRefund(name, approvers, members);
-            }}
-          >
-            Create
-          </Button>
-
-        </div>
-      </>
-    )
-  }
-  
   return (
-    <div>
+    <div className="content">
       {wait ? <Spin /> : (<>
         {!signer && <Redirect to="/" />}
-        <div style={{ padding: 16, paddingTop: 2, border: "1px solid #cccccc", width: 400, margin: "auto", marginTop: 32, marginBottom: 32 }}>
-          {refundAddress || showDeployForm ? <Row style={{ paddingTop: 0, width: 372, margin: "auto" }}>
-            <Col span={1} offset={23}>
-              <Button
-                icon={<CloseOutlined />}
-                size="small"
-                type="text"
-                onClick={() => {
-                  setRefundAddress("")
-                  setRefundInstance()
-                  setNameAlreadyExists(false)
-                  setShowDeployForm(false)
-                  setRefundName("")
-                }}
-              />
-            </Col>
-          </Row> : ""}
-          <div style={{ padding: 4 }}>
-            {refundInfo}
-          </div>
-
-          {deployForm}
-
+        <div>
+          {refundInfo}
         </div>
         <Divider />
       </>)}

@@ -67,9 +67,12 @@
     ]
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.1.1",
     "ipfs-http-client": "^56.0.1",
     "react-image-data-capture": "^1.2.2",
     "tesseract.js": "^2.1.5"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "sass": "^1.49.10"
+  }
 }

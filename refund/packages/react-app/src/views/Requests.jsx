@@ -1,12 +1,12 @@
-import { Button, Image, Card } from "antd";
+import { Image, Card } from "antd";
 import { Address, Balance } from "../components";
 import { Row, Col, Table, Tag } from 'antd';
 import { CheckCircleOutlined, SyncOutlined, CloseCircleOutlined } from "@ant-design/icons";
-import { NewRefundRequest } from "./index.js"
 import { useState } from 'react'
 import { useEffect } from "react";
 import { Redirect } from "react-router-dom";
 import { useCallback } from "react";
+import { Button } from "reactstrap";
 
 
 export default function Requests({
@@ -22,7 +22,6 @@ export default function Requests({
   const APPROVED = "Approved";
   const DENIED = "Denied";
   const PROCESSING = "Processing";
-  const [buttonPopup, setButtonPopup] = useState(false);
   const [requests, setRequests] = useState([]);
   const [approveButtonLoading, setApproveButtonLoading] = useState(false);
   const [denyButtonLoading, setDenyButtonLoading] = useState(false);
@@ -60,7 +59,7 @@ export default function Requests({
       align: 'center',
     },
     {
-      title: <div style={{ paddingLeft: 5 }}>Category</div>,
+      title: <div>Category</div>,
       dataIndex: 'category',
       key: 'category',
       filters: [
@@ -96,7 +95,7 @@ export default function Requests({
       align: 'center',
     },
     {
-      title: <div style={{ paddingLeft: 22 }}>Status</div>,
+      title: <div>Status</div>,
       dataIndex: 'display_status',
       key: 'status',
       sorter: {
@@ -123,8 +122,8 @@ export default function Requests({
   ];
 
   function onRequestsChange(reqList) {
-   const newRequests = [];
-   reqList.forEach(req => {
+    const newRequests = [];
+    reqList.forEach(req => {
       newRequests.push(
         {
           creator_addr:
@@ -135,7 +134,7 @@ export default function Requests({
             (req.approved ?
               <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag> :
               <Tag icon={<CloseCircleOutlined />} color="error">Denied</Tag>) :
-            <Tag icon={<SyncOutlined  />} color="processing">Processing</Tag>,
+            <Tag icon={<SyncOutlined />} color="processing">Processing</Tag>,
           comment: req.description,
           key: req.id,
           url: req.url,
@@ -196,122 +195,106 @@ export default function Requests({
   }, [refundInstance]);
 
   function previewContent() {
-    if (buttonPopup) return (
-      <NewRefundRequest
-        price={price}
-        address={address}
-        refundInstance={refundInstance}
-        signer={signer}
-        trigger={setButtonPopup}
-      />
-    )
-    else {
-      return (
-        <div>
-          {!signer && <Redirect to="/" />}
-          <Table
-            size="middle"
-            columns={columns}
-            dataSource={requests}
-            expandable={{
-              expandedRowRender: record => (
-                <div style={{ margin: 0 }}>
-                  <Row gutter={[8, 8]}>
-                    <Col span={5} offset={isApprover && record.status === PROCESSING ? 0 : 4} style={{ textAlign: "center" }}>
-                      <Card title="Receipt" bordered={false} size="small">
-                        <Image
-                          width={50}
-                          height={50}
-                          src={record.url}
-                        />
+    return (
+      <div>
+        {!signer && <Redirect to="/" />}
+        <Table
+          style={{ backgroundColor: "#f5f5f5", borderRadius: 8 }}
+          size="middle"
+          columns={columns}
+          dataSource={requests}
+          expandable={{
+            expandedRowRender: record => (
+              <div style={{ margin: 0 }}>
+                <Row gutter={[8, 8]}>
+                  <Col span={5} offset={isApprover && record.status === PROCESSING ? 0 : 4} style={{ textAlign: "center" }}>
+                    <Card title="Receipt" bordered={false} size="small">
+                      <Image
+                        width={50}
+                        height={50}
+                        src={record.url}
+                      />
+                    </Card>
+                  </Col>
+                  <Col span={12} style={{ textAlign: "center" }}>
+                    <Card title="Description" bordered={false} size="small">
+                      <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.comment}</div>
+                    </Card>
+                  </Col>
+                  {isApprover && record.status === PROCESSING &&
+                    <Col span={7} style={{ textAlign: "center" }}>
+                      <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height: "100%" }}>
+                        <div style={{ alignItems: "center", paddingTop: 14 }}>
+                          <Button
+                            loading={approveButtonLoading}
+                            style={{ width: "45%" }}
+                            onClick={async () => {
+                              try {
+                                setApproveButtonLoading(true);
+                                let ret = await refundInstance.connect(signer)
+                                  .processRequest(record.key, true);//, {
+                                //   gasLimit: 11000000000,
+                                // });
+                                console.log(ret);
+                                record.status = APPROVED;
+                                record.display_status = <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag>;
+                              } catch (error) {
+                                console.log(error);
+                              }
+                              setApproveButtonLoading(false);
+                            }}
+                          >
+                            Approve
+                          </Button>
+                          &nbsp; &nbsp;
+                          <Button
+                            loading={denyButtonLoading}
+                            style={{ width: "45%" }}
+                            onClick={async () => {
+                              setDenyButtonLoading(true);
+                              try {
+                                let ret = await refundInstance.connect(signer)
+                                  .processRequest(record.key, false);
+                                console.log(ret);
+                                record.status = DENIED;
+                                record.display_status = <Tag icon={<CloseCircleOutlined />} color="error">Denied</Tag>;
+                              } catch (error) {
+                                console.log(error);
+                              }
+                              setDenyButtonLoading(false);
+                            }}
+                          >
+                            Deny
+                          </Button>
+                        </div>
                       </Card>
                     </Col>
-                    <Col span={12} style={{ textAlign: "center" }}>
-                      <Card title="Description" bordered={false} size="small">
-                        <div style={{ textAlign: "left", border: "0.5px solid #666666", borderRadius: 6, padding: 16, margin: "auto" }}>{record.comment}</div>
-                      </Card>
-                    </Col>                              
-                    {isApprover && record.status === PROCESSING &&
-                      <Col span={7} style={{ textAlign: "center" }}>
-                        <Card title="Process Request" bordered={false} size="small" style={{ alignItems: "center", height: "100%" }}>
-                          <div style={{ alignItems: "center", paddingTop: 14 }}>
-                            <Button
-                              loading={approveButtonLoading}
-                              style={{ width: "45%" }}
-                              onClick={async () => {
-                                try {
-                                  setApproveButtonLoading(true);
-                                  let ret = await refundInstance.connect(signer)
-                                    .processRequest(record.key, true);//, {
-                                    //   gasLimit: 11000000000,
-                                    // });
-                                  console.log(ret);
-                                  record.status = APPROVED;
-                                  record.display_status = <Tag icon={<CheckCircleOutlined />} color="success">Approved</Tag>;
-                                } catch (error) {
-                                  console.log(error);
-                                }
-                                setApproveButtonLoading(false);
-                              }}
-                            >
-                              Approve
-                            </Button>
-                            &nbsp; &nbsp;
-                            <Button
-                              loading={denyButtonLoading}
-                              style={{ width: "45%" }}
-                              onClick={async () => {
-                                setDenyButtonLoading(true);
-                                try {
-                                  let ret = await refundInstance.connect(signer)
-                                    .processRequest(record.key, false);
-                                  console.log(ret);
-                                  record.status = DENIED;
-                                  record.display_status = <Tag icon={<CloseCircleOutlined />} color="error">Denied</Tag>;
-                                } catch (error) {
-                                  console.log(error);
-                                }
-                                setDenyButtonLoading(false);
-                              }}
-                            >
-                              Deny
-                            </Button>
-                          </div>
-                        </Card>
-                      </Col>
-                    }
-                  </Row>
-                </div>
-              ),
-            }}
-          />
-          <Button
-            onClick={async () => {
-              let done = isApprover ?
-                await refundInstance.getRequests() :
-                await refundInstance.connect(signer).getMembersRequests();
-              console.log(done);
-              if (done.length > 0) {
-                let date1 = new Date(done[0].date.toNumber())
-                console.log(date1.toLocaleDateString("en-US"));
-              }
-              onRequestsChange(done);
-            }}
-          >Refresh</Button>
-        </div>
-      )
-    }
+                  }
+                </Row>
+              </div>
+            ),
+          }}
+        />
+        <Button
+          onClick={async () => {
+            let done = isApprover ?
+              await refundInstance.getRequests() :
+              await refundInstance.connect(signer).getMembersRequests();
+            console.log(done);
+            if (done.length > 0) {
+              let date1 = new Date(done[0].date.toNumber())
+              console.log(date1.toLocaleDateString("en-US"));
+            }
+            onRequestsChange(done);
+          }}
+        >Refresh</Button>
+      </div>
+    )
   }
 
+
   return (
-    <div style={{ width: 820, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
-      <h2>
-        {isApprover ? "" : "My"} Requests &nbsp;
-        {!buttonPopup && <Button
-          icon='+'
-          onClick={() => setButtonPopup(!buttonPopup)}
-        />}
-      </h2>
+    <div className="content">
       {previewContent()}
     </div>
   );
